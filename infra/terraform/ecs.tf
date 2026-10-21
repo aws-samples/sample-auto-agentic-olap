@@ -8,7 +8,7 @@ resource "aws_ecs_cluster" "main" {
 
 resource "aws_cloudwatch_log_group" "service" {
   name              = "/ecs/${local.prefix}-service"
-  retention_in_days = 30
+  retention_in_days = 365
 }
 
 resource "aws_ecs_task_definition" "service" {

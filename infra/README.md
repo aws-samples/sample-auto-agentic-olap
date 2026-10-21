@@ -30,6 +30,8 @@ permission: any authenticated caller sees every metric.
 
 ```text
 VPC                    public/private subnets, one NAT Gateway, Internet Gateway
+VPC Flow Logs          all traffic to CloudWatch Logs, 365-day retention
+Default security group  all rules removed (deny all)
 Security groups        ALB -> service -> Redshift ingress chain (egress from ALB and service is unrestricted)
 Redshift Serverless    private, publicly_accessible = false
 Redshift usage limit   monthly, auto-suspends when exceeded
@@ -42,13 +44,17 @@ IAM roles              task role + execution role (see below; the dbt task reuse
 Task role permissions (`iam.tf`):
 
 ```text
-redshift-data:ExecuteStatement / DescribeStatement / GetStatementResult / CancelStatement,
-redshift-serverless:GetCredentials             on "*"
+redshift-data:ExecuteStatement, redshift-serverless:GetCredentials
+                                               this workgroup only
+redshift-data:DescribeStatement / GetStatementResult / CancelStatement
+                                               "*" (no resource type exists for these),
+                                               limited to statements this role submitted
+                                               (redshift-data:statement-owner-iam-userid)
 secretsmanager:GetSecretValue                  the Redshift admin secret
 secretsmanager:GetSecretValue / PutSecretValue / DescribeSecret
                                                the MCP API-key secret
 cognito-idp:AdminGetUser                       the user pool (resolve caller email)
-logs:CreateLogStream / PutLogEvents
+logs:CreateLogStream / PutLogEvents            the service and dbt log groups
 ```
 
 ## One domain, HTTPS only
@@ -112,6 +118,7 @@ infra/terraform/
 ├── versions.tf         provider declarations + empty partial S3 backend (values from environments/*.s3.tfbackend)
 ├── variables.tf        input variables
 ├── network.tf          VPC, subnets, security groups
+├── vpc_hardening.tf    default SG (deny all) + VPC Flow Logs
 ├── redshift.tf         private Redshift Serverless + usage limit
 ├── iam.tf              ECS task role and execution role
 ├── ecs.tf              cluster, task definition, service
@@ -426,6 +433,7 @@ Redshift          per RPU-hour
 ALB               per hour + LCU
 ECS Fargate       per vCPU-hour and memory-hour (the dbt runner stops when done, no ongoing charge)
 Route 53          per hosted zone and queries, very low
+CloudWatch Logs   ingestion + storage for service, dbt and VPC Flow Logs (365-day retention)
 ```
 
 When not in use, **destroy the whole stack** rather than stopping individual

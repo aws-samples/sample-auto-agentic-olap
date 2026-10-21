@@ -68,8 +68,9 @@ verified and pinned combination:
 
 ```text
 metricflow:   afab9635481dd3e32a9f1895f37ca83bde08a920 (0.213.0.dev0)
-dbt-core:     1.12.2
-dbt-redshift: 1.11.0
+dbt-core:     1.12.4
+dbt-redshift: 1.11.1
+sqlparse:     0.6.0
 ```
 
 It uses dbt 1.12+ model-level Semantic Layer config:

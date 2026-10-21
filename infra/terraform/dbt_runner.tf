@@ -14,7 +14,7 @@ variable "dbt_runner_image" {
 
 resource "aws_cloudwatch_log_group" "dbt" {
   name              = "/ecs/${local.prefix}-dbt"
-  retention_in_days = 30
+  retention_in_days = 365
 }
 
 resource "aws_ecs_task_definition" "dbt" {

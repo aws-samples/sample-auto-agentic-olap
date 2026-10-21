@@ -88,6 +88,7 @@ resource "aws_security_group" "service" {
   vpc_id      = aws_vpc.main.id
 
   egress {
+    description = "Outbound to AWS APIs (Secrets Manager, Redshift Data API, Cognito, ECR, logs) via NAT, and to Redshift"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -140,6 +141,7 @@ resource "aws_security_group" "alb" {
   }
 
   egress {
+    description = "Outbound to the service targets and health checks"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

@@ -28,16 +28,32 @@ resource "aws_iam_role" "task" {
 }
 
 data "aws_iam_policy_document" "task" {
+  # ExecuteStatement and GetCredentials support the workgroup resource type,
+  # so they are scoped to this workgroup only.
   statement {
-    sid = "RedshiftData"
+    sid = "RedshiftDataExecute"
     actions = [
       "redshift-data:ExecuteStatement",
+      "redshift-serverless:GetCredentials",
+    ]
+    resources = [aws_redshiftserverless_workgroup.main.arn]
+  }
+  # Describe/GetStatementResult/Cancel have no resource type in the Service
+  # Authorization Reference (resource must be "*"). The condition limits them to
+  # statements this same role submitted.
+  statement {
+    sid = "RedshiftDataOwnStatements"
+    actions = [
       "redshift-data:DescribeStatement",
       "redshift-data:GetStatementResult",
       "redshift-data:CancelStatement", # cancel timed-out statements so they do not pile up
-      "redshift-serverless:GetCredentials",
     ]
     resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "redshift-data:statement-owner-iam-userid"
+      values   = ["$${aws:userid}"]
+    }
   }
   statement {
     sid       = "ReadRedshiftSecret"
@@ -59,9 +75,12 @@ data "aws_iam_policy_document" "task" {
     resources = ["arn:aws:cognito-idp:${var.region}:${data.aws_caller_identity.current.account_id}:userpool/${var.cognito_user_pool_id}"]
   }
   statement {
-    sid       = "Logs"
-    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = ["*"]
+    sid     = "Logs"
+    actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
+    resources = [
+      "${aws_cloudwatch_log_group.service.arn}:*",
+      "${aws_cloudwatch_log_group.dbt.arn}:*",
+    ]
   }
 }
 
