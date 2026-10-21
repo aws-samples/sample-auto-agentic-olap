@@ -5,12 +5,12 @@
 # Build from the medical-data-service directory, not from backend/:
 #   docker build -f backend/Dockerfile -t medical-data-service .
 
-FROM node:20-slim AS frontend
+FROM public.ecr.aws/docker/library/node:20-slim AS frontend
 
 WORKDIR /build
 
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci || npm install
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
 
 COPY frontend/ ./
 # Same-origin API calls: the UI is served by the API, so a relative base is right.
@@ -18,7 +18,7 @@ ENV VITE_API_BASE=""
 RUN npm run build
 
 
-FROM python:3.13-slim
+FROM public.ecr.aws/docker/library/python:3.13-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \

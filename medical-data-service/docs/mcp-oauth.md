@@ -46,7 +46,7 @@ Write to `~/.aws/amazonq/mcp.json` or the client's MCP config:
     "medical-data-service": {
       "command": "npx",
       "args": [
-        "-y", "mcp-remote", "https://your-app.example.com/mcp/", "3334",
+        "-y", "mcp-remote@0.15.2", "https://your-app.example.com/mcp/", "3334",
         "--static-oauth-client-info",
         "{\"client_id\":\"<AGENT_APP_CLIENT_ID>\",\"token_endpoint_auth_method\":\"none\"}"
       ]
@@ -57,6 +57,9 @@ Write to `~/.aws/amazonq/mcp.json` or the client's MCP config:
 
 The first connection opens a browser for you to sign in with Cognito; afterward
 `mcp-remote` caches the token.
+
+`mcp-remote` handles your OAuth tokens, so the config pins an exact version
+(`mcp-remote@0.15.2`). Review the release before changing the version.
 
 > Two key points:
 >

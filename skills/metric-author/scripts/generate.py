@@ -11,7 +11,7 @@ confirmed.json:
 
 Only candidates with status "new" are written; anything else is refused.
 New blocks are inserted as text after the target list; existing lines are never rewritten.
-Run with: uv run --with pyyaml --with ruamel.yaml python generate.py ...
+Run with: uv run --with pyyaml==6.0.3 --with ruamel.yaml==0.19.1 python generate.py ...
 """
 
 from __future__ import annotations

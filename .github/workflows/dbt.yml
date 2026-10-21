@@ -39,18 +39,19 @@ jobs:
           role-to-assume: ${{ secrets.DBT_DEPLOY_ROLE_ARN }}
           aws-region: us-east-1
 
-      - name: Resolve Redshift credentials
-        run: |
-          SECRET=$(aws secretsmanager get-secret-value --secret-id "$REDSHIFT_SECRET_ARN" --query SecretString --output text)
-          echo "REDSHIFT_USER=$(echo "$SECRET" | python -c 'import json,sys;print(json.load(sys.stdin)["username"])')" >> "$GITHUB_ENV"
-          echo "::add-mask::$(echo "$SECRET" | python -c 'import json,sys;print(json.load(sys.stdin)["password"])')"
-          echo "REDSHIFT_PASSWORD=$(echo "$SECRET" | python -c 'import json,sys;print(json.load(sys.stdin)["password"])')" >> "$GITHUB_ENV"
+      # The Redshift credentials are read and used inside this one step and are
+      # never written to GITHUB_ENV or echoed, so no later step or log line can
+      # see them.
+      - name: dbt build (quality gate)
         env:
           REDSHIFT_SECRET_ARN: ${{ secrets.REDSHIFT_SECRET_ARN }}
-
-      - name: dbt build (quality gate)
         run: |
-          cp profiles.yml.example ~/.dbt/profiles.yml || (mkdir -p ~/.dbt && cp profiles.yml.example ~/.dbt/profiles.yml)
+          SECRET=$(aws secretsmanager get-secret-value --secret-id "$REDSHIFT_SECRET_ARN" --query SecretString --output text)
+          REDSHIFT_USER=$(printf '%s' "$SECRET" | python -c 'import json,sys;print(json.load(sys.stdin)["username"])')
+          REDSHIFT_PASSWORD=$(printf '%s' "$SECRET" | python -c 'import json,sys;print(json.load(sys.stdin)["password"])')
+          unset SECRET
+          export REDSHIFT_USER REDSHIFT_PASSWORD
+          mkdir -p ~/.dbt && cp profiles.yml.example ~/.dbt/profiles.yml
           .venv/bin/dbt deps || true
           .venv/bin/dbt seed
           .venv/bin/dbt run

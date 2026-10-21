@@ -13,6 +13,11 @@ uv pip install -r requirements.txt
 cp profiles.yml.example ~/.dbt/profiles.yml
 ```
 
+`requirements.txt` pins the direct dependencies. The dbt runner image installs
+`requirements.lock`, which pins every package including transitive ones and
+`awscli`; regenerate it with the command in its header after changing
+`requirements.txt` or `requirements-runner.in`.
+
 Database credentials are passed via environment variables:
 
 ```bash

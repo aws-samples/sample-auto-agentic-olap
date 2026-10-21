@@ -49,7 +49,7 @@ cp -r skills/metric-author ~/.claude/skills/
 ```
 
 The skill's scripts pull dependencies on the fly via `uv run --with ...`
-(pyyaml, duckdb, sqlglot, jinja2, ruamel.yaml), with no pre-install needed.
+(pinned: pyyaml 6.0.3, duckdb 1.5.6, sqlglot 30.24.0, jinja2 3.1.6, ruamel.yaml 0.19.1), with no pre-install needed.
 
 The validation step needs a Python environment with MetricFlow installed,
 pinned to the same MetricFlow commit as the service and dbt project (or point `validate.metricflow_python` at the service's `.venv`):

@@ -8,15 +8,10 @@ this module renders SQL through MetricFlow and executes it on Redshift.
 from __future__ import annotations
 
 import os
-import re
 from functools import lru_cache
 from typing import Any
 
 from app.metricflow.client import MetricFlowClient
-
-_IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-# Only the analytics schemas are browsable; system schemas are hidden.
-_HIDDEN_SCHEMAS = ("pg_catalog", "information_schema", "pg_internal", "pg_automv")
 
 
 class DataService:
@@ -108,62 +103,6 @@ class DataService:
 
         result = RedshiftDataApi().query_records(generated["sql"])
         return {**generated, **result}
-
-    # -- raw data exploration ------------------------------------------------
-
-    @staticmethod
-    def _api():
-        from app.redshift.client import RedshiftDataApi
-
-        return RedshiftDataApi()
-
-    @staticmethod
-    def _check_ident(name: str, kind: str) -> None:
-        if not name or not _IDENT.match(name):
-            raise ValueError(f"invalid {kind} name: {name!r}")
-
-    def list_schemas(self) -> dict[str, Any]:
-        """List the (non-system) schemas in the warehouse."""
-        hidden = ", ".join(f"'{s}'" for s in _HIDDEN_SCHEMAS)
-        sql = (
-            "select table_schema, count(*) as table_count from svv_tables "
-            f"where table_schema not in ({hidden}) "
-            "group by table_schema order by table_schema"
-        )
-        return self._api().query_records(sql)
-
-    def list_tables(self, schema: str | None = None) -> dict[str, Any]:
-        """List tables/views, optionally filtered to one schema."""
-        hidden = ", ".join(f"'{s}'" for s in _HIDDEN_SCHEMAS)
-        where = f"table_schema not in ({hidden})"
-        if schema:
-            self._check_ident(schema, "schema")
-            where = f"table_schema = '{schema}'"
-        sql = (
-            "select table_schema, table_name, table_type from svv_tables "
-            f"where {where} order by table_schema, table_name"
-        )
-        return self._api().query_records(sql)
-
-    def describe_table(self, schema: str, table: str) -> dict[str, Any]:
-        """List a table's columns and their data types."""
-        self._check_ident(schema, "schema")
-        self._check_ident(table, "table")
-        sql = (
-            "select column_name, data_type, character_maximum_length "
-            "from information_schema.columns "
-            f"where table_schema = '{schema}' and table_name = '{table}' "
-            "order by ordinal_position"
-        )
-        return self._api().query_records(sql)
-
-    def sample_table(self, schema: str, table: str, limit: int = 50) -> dict[str, Any]:
-        """Return up to 50 raw rows from a table (capped, for inspection)."""
-        self._check_ident(schema, "schema")
-        self._check_ident(table, "table")
-        capped = max(1, min(int(limit), 50))
-        sql = f'SELECT * FROM "{schema}"."{table}" LIMIT {capped}'
-        return {"sql": sql, **self._api().query_records(sql)}
 
 
 @lru_cache(maxsize=1)

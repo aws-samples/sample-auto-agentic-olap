@@ -1,7 +1,7 @@
 // One-off dbt runner.
 //
 // The warehouse is private, so dbt cannot run from a laptop. This defines a
-// Fargate task that runs `dbt seed && dbt run && dbt test` from inside the
+// Fargate task that runs dbt debug, seed --full-refresh, run and test from inside the
 // private subnets, reusing the service security group (already allowed to reach
 // Redshift on 5439). It is a task definition, not a service: it runs to
 // completion and stops.

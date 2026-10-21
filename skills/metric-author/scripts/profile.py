@@ -8,7 +8,7 @@ the project's seed CSVs (Redshift SQL is transpiled with sqlglot).
 Usage:
     python profile.py --project <dbt_dir> [--manifest <path>] [--out <file>]
 
-Run with: uv run --with pyyaml --with duckdb --with sqlglot --with jinja2 python profile.py ...
+Run with: uv run --with pyyaml==6.0.3 --with duckdb==1.5.6 --with sqlglot==30.24.0 --with jinja2==3.1.6 python profile.py ...
 """
 
 from __future__ import annotations

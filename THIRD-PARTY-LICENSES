@@ -12,8 +12,8 @@ dependency manifests (`medical-olap-dbt/requirements.txt`, `medical-data-service
 | dbt-core | Apache-2.0 |
 | dbt-redshift | Apache-2.0 |
 | metricflow (git commit afab9635481dd3e32a9f1895f37ca83bde08a920) | Apache-2.0 (LICENSE file at that commit) |
-| awscli (installed in the dbt runner image) | Apache-2.0 |
-| uv (installed in the dbt runner image) | MIT OR Apache-2.0 |
+| awscli 1.46.1 (installed in the dbt runner image) | Apache-2.0 |
+| uv 0.10.10 (installed in the dbt runner image) | MIT OR Apache-2.0 |
 
 ## Python - data service backend (medical-data-service/backend)
 
@@ -26,7 +26,7 @@ dependency manifests (`medical-olap-dbt/requirements.txt`, `medical-data-service
 | PyJWT | MIT |
 | mcp | MIT |
 | metricflow (git commit afab9635481dd3e32a9f1895f37ca83bde08a920) | Apache-2.0 |
-| uv (installed in the image) | MIT OR Apache-2.0 |
+| uv 0.10.10 (installed in the image) | MIT OR Apache-2.0 |
 | pytest (dev) | MIT |
 | httpx (dev) | BSD-3-Clause |
 | ruff (dev) | MIT |
@@ -70,5 +70,5 @@ dependency manifests (`medical-olap-dbt/requirements.txt`, `medical-data-service
 
 | Image | Notes |
 | --- | --- |
-| node:20-slim | Docker Official Image; Node.js is MIT, the Debian base contains packages under their own licenses |
-| python:3.13-slim | Docker Official Image; Python is PSF-2.0, the Debian base contains packages under their own licenses |
+| public.ecr.aws/docker/library/node:20-slim | Docker Official Image (ECR Public mirror); Node.js is MIT, the Debian base contains packages under their own licenses |
+| public.ecr.aws/docker/library/python:3.13-slim | Docker Official Image (ECR Public mirror); Python is PSF-2.0, the Debian base contains packages under their own licenses |

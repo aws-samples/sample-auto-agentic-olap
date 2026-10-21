@@ -16,7 +16,7 @@ only write semantic-layer YAML; all SQL is produced by MetricFlow compilation.
 The scripts are under this skill's `scripts/`, the working directory is the
 project's dbt root, and intermediate artifacts go to `target/metric-author/`.
 Run `profile.py`, `derive.py`, `generate.py` with
-`uv run --with pyyaml --with duckdb --with sqlglot --with jinja2 --with ruamel.yaml python <script>`;
+`uv run --with pyyaml==6.0.3 --with duckdb==1.5.6 --with sqlglot==30.24.0 --with jinja2==3.1.6 --with ruamel.yaml==0.19.1 python <script>`;
 `check_metrics.py` needs an environment with MetricFlow installed, i.e. the
 config's `validate.metricflow_python`.
 
@@ -36,7 +36,7 @@ the profile, explain each item to the user, and save after they confirm.
 ### (1) Inventory
 
 ```bash
-uv run --with pyyaml --with duckdb --with sqlglot --with jinja2 --with ruamel.yaml python <skill-dir>/scripts/profile.py --project . --config metric_scenario.yml --out target/metric-author/profile.json
+uv run --with pyyaml==6.0.3 --with duckdb==1.5.6 --with sqlglot==30.24.0 --with jinja2==3.1.6 --with ruamel.yaml==0.19.1 python <skill-dir>/scripts/profile.py --project . --config metric_scenario.yml --out target/metric-author/profile.json
 ```
 
 Done when: the profile covers every column of every fact table in the config,
@@ -47,7 +47,7 @@ tell the user warehouse sampling is needed.
 ### (2) Derive
 
 ```bash
-uv run --with pyyaml --with duckdb --with sqlglot --with jinja2 --with ruamel.yaml python <skill-dir>/scripts/derive.py --profile target/metric-author/profile.json --config metric_scenario.yml
+uv run --with pyyaml==6.0.3 --with duckdb==1.5.6 --with sqlglot==30.24.0 --with jinja2==3.1.6 --with ruamel.yaml==0.19.1 python <skill-dir>/scripts/derive.py --profile target/metric-author/profile.json --config metric_scenario.yml
 ```
 
 Produces `candidates.json` and `review.md`. Candidates are compared against the
@@ -98,7 +98,7 @@ lists the confirmed metric names, `labels` / `descriptions` hold your rewritten
 names and descriptions. Then:
 
 ```bash
-uv run --with pyyaml --with duckdb --with sqlglot --with jinja2 --with ruamel.yaml python <skill-dir>/scripts/generate.py --profile target/metric-author/profile.json \
+uv run --with pyyaml==6.0.3 --with duckdb==1.5.6 --with sqlglot==30.24.0 --with jinja2==3.1.6 --with ruamel.yaml==0.19.1 python <skill-dir>/scripts/generate.py --profile target/metric-author/profile.json \
   --candidates target/metric-author/candidates.json \
   --confirmed target/metric-author/confirmed.json --config metric_scenario.yml
 ```

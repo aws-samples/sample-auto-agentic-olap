@@ -83,7 +83,7 @@ const mcpConfig = computed(() => {
           'medical-data-service': {
             command: 'npx',
             args: [
-              '-y', 'mcp-remote', mcpUrl.value, '3334',
+              '-y', 'mcp-remote@0.15.2', mcpUrl.value, '3334',
               // client-info (not client-metadata): supplies a pre-registered
               // client_id and skips DCR, which Cognito does not support.
               '--static-oauth-client-info',

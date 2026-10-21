@@ -1,0 +1,3 @@
+-r requirements.txt
+# Runner image only: fetches the Redshift secret in run_dbt_build.sh.
+awscli==1.46.1

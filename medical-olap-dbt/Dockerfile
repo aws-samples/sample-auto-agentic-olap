@@ -1,13 +1,13 @@
 # One-off dbt runner, executed as a Fargate task inside the VPC.
 #
 # The warehouse is private (publicly_accessible = false), so dbt cannot reach it
-# from a laptop. This image runs `dbt seed && dbt run && dbt test` from within
+# from a laptop. This image runs dbt debug, seed --full-refresh, run and test from within
 # the private subnets, which is also what a CI job would do.
 #
 # Build from the medical-olap-dbt directory:
 #   docker build -t medical-dbt-runner .
 
-FROM python:3.13-slim
+FROM public.ecr.aws/docker/library/python:3.13-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -15,14 +15,16 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-RUN pip install uv
+RUN pip install uv==0.10.10
 
 # git stays in the image: it is needed to install MetricFlow from its pinned
 # commit, and `dbt debug` also checks for git in PATH and fails without it.
-COPY requirements.txt ./
+# requirements.lock pins every package (dbt, MetricFlow, awscli and all
+# transitive dependencies); regenerate it with the command in its header.
+COPY requirements.lock ./
 RUN apt-get update \
     && apt-get install --no-install-recommends -y git \
-    && uv pip install --system --no-cache -r requirements.txt awscli \
+    && uv pip install --system --no-cache -r requirements.lock \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . .
