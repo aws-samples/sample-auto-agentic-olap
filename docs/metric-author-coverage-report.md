@@ -238,7 +238,7 @@ Python environment with the server's same MetricFlow version
 cd medical-olap-dbt                    # for scenario B, switch to that project's dbt root
 S=../skills/metric-author/scripts
 M=target/metric-author
-DEPS="--with pyyaml --with duckdb --with sqlglot --with jinja2"
+DEPS="--with pyyaml==6.0.3 --with duckdb==1.5.6 --with sqlglot==30.24.0 --with jinja2==3.1.6"
 
 # dbt parse needs only the profile, no warehouse
 mkdir -p $M/profiles && cp profiles.yml.example $M/profiles/profiles.yml
@@ -246,7 +246,7 @@ DBT_PROFILES_DIR=$M/profiles REDSHIFT_HOST=localhost REDSHIFT_USER=x REDSHIFT_PA
   .venv/bin/python scripts/dbt_parse.py
 
 uv run $DEPS python $S/profile.py --project . --config metric_scenario.yml --out $M/profile.json
-uv run --with pyyaml python $S/derive.py --profile $M/profile.json --config metric_scenario.yml
+uv run --with pyyaml==6.0.3 python $S/derive.py --profile $M/profile.json --config metric_scenario.yml
 # output: candidates / existing matched / conflict / uncovered; details in $M/review.md
 
 # compile all existing metrics offline

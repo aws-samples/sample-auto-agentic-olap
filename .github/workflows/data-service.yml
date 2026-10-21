@@ -28,7 +28,7 @@ jobs:
         # into the image.
         env:
           METRICFLOW_MANIFEST_PATH: semantic_manifest.json
-        run: uv run --extra dev python -m pytest -q
+        run: uv run --frozen --extra dev python -m pytest -q
 
   frontend-build:
     runs-on: ubuntu-latest

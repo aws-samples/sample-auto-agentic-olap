@@ -80,7 +80,7 @@ Backend (needs the Redshift environment variables to actually execute queries):
 
 ```bash
 cd backend
-uv sync
+uv sync --frozen   # exact versions from uv.lock
 export METRICFLOW_MANIFEST_PATH=../../medical-olap-dbt/target/semantic_manifest.json
 export AWS_REGION=us-east-1
 export REDSHIFT_WORKGROUP=medical-dev-wg REDSHIFT_DATABASE=medical_dw
@@ -88,7 +88,7 @@ export REDSHIFT_SECRET_ARN=<namespace admin secret arn>
 export QUERY_EXECUTION_ENABLED=true
 export COGNITO_ISSUER=... COGNITO_CLIENT_ID=... COGNITO_DOMAIN=... ADMIN_EMAIL=you@example.com
 
-uv run uvicorn app.main:app --reload --port 8000
+uv run --frozen uvicorn app.main:app --reload --port 8000
 ```
 
 - MCP endpoint: `http://localhost:8000/mcp`

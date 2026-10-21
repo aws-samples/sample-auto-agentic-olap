@@ -55,14 +55,14 @@ MCP service reads. Regenerate the synthetic seed data at any time with:
 
 ```bash
 cd ../medical-data-service/backend
-uv sync
+uv sync --frozen   # exact versions from uv.lock
 export METRICFLOW_MANIFEST_PATH=../../medical-olap-dbt/target/semantic_manifest.json
 
 # compile all saved queries offline (no warehouse)
 uv run python ../../medical-olap-dbt/scripts/semantic/compile_saved_queries.py
 
 # run the MCP backend tests
-uv run --extra dev python -m pytest -q
+uv run --frozen --extra dev python -m pytest -q
 ```
 
 Green tests here mean the semantic layer parses, every saved query compiles to
@@ -85,7 +85,7 @@ execute queries it needs the Redshift environment variables (see Path B); set
 
 ```bash
 cd ../backend
-uv run uvicorn app.main:app --reload --port 8000
+uv run --frozen uvicorn app.main:app --reload --port 8000
 ```
 
 ---
