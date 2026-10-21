@@ -41,6 +41,7 @@ try:
     MAX_WAIT = int(os.getenv("MAX_WAIT", "600"))
 except ValueError:
     MAX_WAIT = 600
+POLL_SECONDS = 3
 
 # Dimensions the demo slices by most often. For each metric we warm the total
 # (no group-by) plus each of these that is valid for that metric -- enough to
@@ -94,7 +95,8 @@ def run_stmt(data, secret_arn: str, sql: str, label: str) -> None:
     )["Id"]
     status = "SUBMITTED"
     while True:
-        time.sleep(3)
+        # Poll interval for the Redshift Data API, which has no waiter.
+        time.sleep(POLL_SECONDS)  # nosemgrep: arbitrary-sleep
         status = data.describe_statement(Id=stmt_id)["Status"]
         if status in ("FINISHED", "FAILED", "ABORTED"):
             break

@@ -66,7 +66,12 @@ def render(name: str, project: Path, seen: tuple[str, ...] = (), dialect: str = 
     sql_files = list((project / "models").rglob(f"{name}.sql"))
     if not sql_files:
         raise ValueError(f"cannot resolve ref('{name}')")
-    env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+    # The template renders SQL, not HTML, so HTML autoescaping must stay off;
+    # select_autoescape() makes that choice explicit instead of implicit.
+    env = jinja2.Environment(
+        undefined=jinja2.StrictUndefined,
+        autoescape=jinja2.select_autoescape(default_for_string=False, default=False),
+    )
     context = {
         "ref": lambda ref_name: render(ref_name, project, (*seen, name), dialect),
         "var": lambda _key, default=None: default,
