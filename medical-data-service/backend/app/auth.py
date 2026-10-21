@@ -35,14 +35,20 @@ def _verify(token: str) -> User:
         _jwks_client = jwt.PyJWKClient(f"{issuer}/.well-known/jwks.json")
     signing_key = _jwks_client.get_signing_key_from_jwt(token)
     client_id = os.getenv("COGNITO_CLIENT_ID")
+    if not client_id:
+        # Fail closed: without the portal app client id there is no way to tell
+        # a portal token from one issued to any other client in the pool.
+        raise jwt.InvalidAudienceError("COGNITO_CLIENT_ID is not configured")
     payload = jwt.decode(
         token,
         signing_key.key,
         algorithms=["RS256"],
         issuer=issuer,
         audience=client_id,
-        options={"verify_aud": bool(client_id)},
+        options={"require": ["aud", "token_use", "exp"]},
     )
+    if payload.get("token_use") != "id":
+        raise jwt.InvalidTokenError("not an id token")
     return User(str(payload.get("sub", "")), str(payload.get("email", "")))
 
 

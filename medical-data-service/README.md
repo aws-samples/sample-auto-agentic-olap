@@ -60,7 +60,7 @@ frontend/            Vue 3 + shadcn-vue portal (connection guide / metric catalo
 
 ```text
 COGNITO_ISSUER         https://cognito-idp.<region>.amazonaws.com/<UserPoolId>
-COGNITO_CLIENT_ID      Cognito app client id
+COGNITO_CLIENT_ID      portal app client id (required: portal id tokens must carry it as aud; unset = all portal requests rejected)
 COGNITO_DOMAIN         <prefix>.auth.<region>.amazoncognito.com
 ADMIN_EMAIL            only this email can create/revoke API keys
 MCP_API_KEYS_SECRET    Secrets Manager secret name that stores keys (default medical/dev/mcp-api-keys)
