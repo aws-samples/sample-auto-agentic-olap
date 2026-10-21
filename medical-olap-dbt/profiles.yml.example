@@ -1,0 +1,13 @@
+medical_olap:
+  target: dev
+  outputs:
+    dev:
+      type: redshift
+      host: "{{ env_var('REDSHIFT_HOST') }}"
+      port: 5439
+      user: "{{ env_var('REDSHIFT_USER') }}"
+      password: "{{ env_var('REDSHIFT_PASSWORD') }}"
+      dbname: "{{ env_var('REDSHIFT_DATABASE', 'medical_dw') }}"
+      schema: sim_business
+      threads: 4
+      sslmode: require

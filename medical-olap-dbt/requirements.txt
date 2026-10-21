@@ -1,0 +1,6 @@
+# Pinned to the combination validated with `dbt parse` / `dbt build`.
+# dbt 1.12+ model-level semantic configuration is required.
+dbt-core==1.12.2
+dbt-redshift==1.11.0
+# MetricFlow is pinned to the same commit the backend locks in uv.lock.
+metricflow @ git+https://github.com/dbt-labs/metricflow.git@afab9635481dd3e32a9f1895f37ca83bde08a920

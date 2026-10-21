@@ -1,0 +1,30 @@
+# dev environment variable template. Copy to dev.tfvars and fill in your own real values:
+#   cp dev.tfvars.example dev.tfvars
+# dev.tfvars is .gitignored and will not be committed to the repo.
+
+environment                    = "dev"
+region                         = "us-east-1"
+vpc_cidr                       = "10.21.0.0/16"
+az_count                       = 3
+redshift_base_rpu              = 32
+redshift_max_rpu               = 64
+redshift_usage_limit_rpu_hours = 300
+service_desired_count          = 1
+
+# Your domain and certificate (the certificate must be in the region above and cover app_domain)
+app_domain          = "your-app.example.com"
+route53_zone_name   = "example.com"
+acm_certificate_arn = "arn:aws:acm:us-east-1:<ACCOUNT_ID>:certificate/<CERT_ID>"
+
+# Container images (fill in after pushing to your own ECR)
+service_image    = "<ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/medical-data-service:<TAG>"
+dbt_runner_image = "<ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/medical-dbt-runner:<TAG>"
+
+# MCP access control (the Cognito user pool and client must be created beforehand; see docs/mcp-oauth.md)
+mcp_oauth_enabled        = true
+cognito_user_pool_id     = "<REGION>_<POOL_ID>"
+cognito_client_id        = "<COGNITO_APP_CLIENT_ID>"
+cognito_agent_client_id  = "<COGNITO_AGENT_CLIENT_ID>"
+cognito_domain           = "<PREFIX>.auth.us-east-1.amazoncognito.com"
+admin_email              = "you@example.com"
+mcp_api_keys_secret_name = "medical/dev/mcp-api-keys"

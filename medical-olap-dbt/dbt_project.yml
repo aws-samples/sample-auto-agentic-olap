@@ -1,0 +1,74 @@
+name: medical_olap
+version: 1.0.0
+config-version: 2
+
+profile: medical_olap
+
+model-paths: [models]
+seed-paths: [seeds]
+test-paths: [tests]
+macro-paths: [macros]
+
+
+models:
+  medical_olap:
+    pharma-dim:
+      +schema: pharma_dim
+      +materialized: table
+    pharma-dm:
+      +schema: pharma_dm
+      +materialized: table
+
+seeds:
+  medical_olap:
+    +schema: sim_business
+    +quote_columns: false
+    pharma-dim:
+      dw_dim_country:
+        +column_types:
+          country_code: varchar(8)
+          country_cn_short: varchar(100)
+          country_cn_full: varchar(200)
+          countryname_en: varchar(200)
+          currency_code: varchar(8)
+          language_code: varchar(16)
+          timezone: varchar(32)
+      dw_dim_product:
+        +column_types:
+          package_code: bigint
+          package_name: varchar(200)
+          brand_code: varchar(32)
+          brand_name: varchar(200)
+          bu_code: varchar(32)
+          bu_name: varchar(100)
+      dw_dim_region:
+        +column_types:
+          country_code: varchar(8)
+          region_code: varchar(32)
+          region_name: varchar(100)
+          seq_id: integer
+    pharma-dm:
+      dm_fact_sales_detail:
+        +column_types:
+          yearmonth: integer
+          quarter: varchar(8)
+          country_code: varchar(8)
+          brand_code: varchar(32)
+          package_code: bigint
+          dist_code: bigint
+          control_flag: smallint
+          sales_type: varchar(32)
+          sales_qty: bigint
+          sales_value: decimal(38, 2)
+          bu_code: varchar(32)
+          un_split_sales_qty: bigint
+      dm_fact_sales_forecast:
+        +column_types:
+          yearmonth: integer
+          brand_code: varchar(32)
+          package_name: varchar(200)
+          country_code: varchar(8)
+          fcst_qty: bigint
+          fcst_value: decimal(38, 2)
+          sales_type: varchar(32)
+          data_type: varchar(16)

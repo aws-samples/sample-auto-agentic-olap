@@ -1,0 +1,5 @@
+bucket         = "medical-tfstate-<ACCOUNT_ID>"
+key            = "medical/prod/terraform.tfstate"
+region         = "us-east-1"
+dynamodb_table = "medical-tf-lock"
+encrypt        = true

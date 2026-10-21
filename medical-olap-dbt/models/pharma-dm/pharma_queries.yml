@@ -1,0 +1,65 @@
+version: 2
+
+# Reusable semantic queries only: deliberately NO exports or cache tables.
+saved_queries:
+  - name: pharma_monthly_growth_by_brand
+    label: Brand monthly growth
+    description: Amount and growth together; returns brand codes for presentation mapping.
+    query_params:
+      metrics: [pharma_sales_value, pharma_sales_yoy_change, pharma_sales_yoy_rate, pharma_sales_mom_change, pharma_sales_mom_rate, pharma_sales_rolling_3m]
+      group_by: ["TimeDimension('metric_time', 'month')", "Entity('pharma_brand')"]
+  - name: pharma_cumulative_sales_by_region
+    label: Region cumulative sales
+    query_params:
+      metrics: [pharma_sales_value, pharma_sales_qtd, pharma_sales_ytd, pharma_sales_ytd_yoy_change, pharma_sales_ytd_yoy_rate]
+      group_by: ["TimeDimension('metric_time', 'month')", "Dimension('pharma_country__region_name')"]
+  - name: pharma_budget_components_by_cell
+    label: Common-cell actual/budget/forecast reconciliation
+    description: Month-country-brand-type cell inputs. Use the native comparable-cell metrics (pharma_budget_achievement etc.) for matched-scope ratios, not a ratio of unrelated totals.
+    query_params:
+      metrics: [pharma_sales_value, pharma_budget_value, pharma_forecast_value, pharma_actual_rows, pharma_budget_rows, pharma_forecast_rows, pharma_actual_null_rows, pharma_budget_null_rows, pharma_forecast_null_rows]
+      group_by: ["TimeDimension('metric_time', 'month')", "Entity('pharma_brand')", "Entity('pharma_country')", "Entity('pharma_sales_type')"]
+  - name: pharma_monthly_budget_performance_by_cell
+    label: Common-cell monthly budget performance
+    description: Native matched-scope values and guarded ratios at the shared comparable-cell grain.
+    query_params:
+      metrics:
+        - pharma_actual_value_with_budget
+        - pharma_budget_value_with_actual
+        - pharma_budget_achievement
+        - pharma_budget_variance
+        - pharma_budget_gap
+        - pharma_actual_value_with_forecast
+        - pharma_forecast_value_with_actual
+        - pharma_forecast_achievement
+        - pharma_forecast_variance
+        - pharma_forecast_budget_variance
+        - pharma_forecast_budget_rate
+        - pharma_growing_but_below_budget
+        - pharma_three_months_below_budget
+      group_by:
+        - "TimeDimension('metric_time', 'month')"
+        - "Entity('pharma_brand')"
+        - "Entity('pharma_country')"
+        - "Entity('pharma_sales_type')"
+  - name: pharma_actual_by_distributor
+    label: Distributor sales and growth
+    query_params:
+      metrics: [pharma_sales_value, pharma_sales_yoy_change, pharma_sales_yoy_rate, pharma_negative_sales_value]
+      group_by: ["TimeDimension('metric_time', 'month')", "Dimension('pharma_sales_detail__distributor_code')"]
+  - name: pharma_actual_by_bu
+    label: Sales BU actual performance
+    description: Uses the fact sales BU, never the product dimension BU.
+    query_params:
+      metrics: [pharma_sales_value, pharma_sales_yoy_change, pharma_sales_yoy_rate]
+      group_by: ["TimeDimension('metric_time', 'month')", "Dimension('pharma_sales_detail__bu_code')"]
+  - name: pharma_same_package_price_quantity
+    label: Same-package quantity and net shipment average price
+    query_params:
+      metrics: [pharma_sales_value, pharma_sales_quantity, pharma_same_package_average_value, pharma_negative_sales_value]
+      group_by: ["TimeDimension('metric_time', 'month')", "Entity('pharma_package')"]
+  - name: pharma_plan_by_brand_country_type
+    label: Brand / country / business-type budget and forecast
+    query_params:
+      metrics: [pharma_budget_value, pharma_forecast_value, pharma_budget_ytd, pharma_forecast_ytd]
+      group_by: ["TimeDimension('metric_time', 'month')", "Entity('pharma_brand')", "Entity('pharma_country')", "Entity('pharma_sales_type')"]

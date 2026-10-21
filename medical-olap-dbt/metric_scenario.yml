@@ -1,0 +1,80 @@
+# Scenario config for the metric-author skill (~/.kiro/skills/metric-author).
+# Project-specific facts the generic derivation rules cannot infer.
+version: 1
+
+manifest:                       # first existing path wins
+  - target/semantic_manifest.json
+  - ../medical-data-service/backend/semantic_manifest.json
+
+naming:
+  prefix: pharma_
+  language: en
+
+targets:                        # where generate.py writes confirmed metrics
+  simple: model_yaml            # the model's own schema.yml, under models[].metrics
+  time: models/pharma-dm/pharma_metrics.yml
+  comparison: models/pharma-dm/pharma_comparison_metrics.yml
+
+facts:
+  pharma_sales_actuals:
+    role: actual
+    label: Actuals
+    measures:
+      sales_value:            {name: sales_value, stem: sales, label: Actual sales value, kind: value, time: full}
+      sales_quantity:         {name: sales_quantity, stem: quantity, label: Actual sales quantity, kind: quantity, time: none}
+      unsplit_sales_quantity: {name: unsplit_sales_quantity, label: Unsplit sales quantity, kind: quantity, role: check}
+    counts:                     # F3; on an aggregate mart only codes, never documents
+      package_code: {name: actual_package_count, label: Actual package-code count (average-price check), agg: count_distinct, expr: "nullif(package_code, '')"}
+
+  pharma_sales_plans:
+    role: target
+    scenario:
+      column: data_type
+      values:
+        bgt:  {key: budget, label: Budget}
+        fcst: {key: forecast, label: Forecast}
+    measures:
+      planned_value:    {name: "{scenario}_value", stem: "{scenario}", label: "{scenario_label} value", kind: value, time: to_date}
+      planned_quantity: {name: "{scenario}_quantity", stem: "{scenario}_quantity", label: "{scenario_label} quantity", kind: quantity, time: none}
+
+comparisons:                    # F6 cross-fact comparison on a shared grain
+  comparable_entity: pharma_comparable_cell   # month + country + brand + sales_type
+  pairs:                        # sides are fact roles / scenario keys
+    - subject: actual
+      reference: budget
+      outputs: [achievement, variance, gap]
+      flags: [growing_below]
+      consecutive_below_months: 3
+    - subject: actual
+      reference: forecast
+      outputs: [achievement, variance]
+    - subject: forecast
+      reference: budget
+      outputs: [variance, rate]
+
+ratios:                         # F5
+  - name: same_package_average_value
+    label: Same-package net shipment average price (raw quantity unit)
+    numerator: sales_value
+    denominator: sales_quantity
+    guards:                     # mixed packages or incomplete inputs give no unit meaning
+      - {metric: actual_package_count, alias: package_count, condition: "= 1"}
+      - {metric: missing_package_rows, alias: missing_packages, condition: "= 0"}
+      - {metric: quantity_null_rows, alias: missing_quantity, condition: "= 0"}
+      - {metric: actual_null_rows, alias: missing_amount, condition: "= 0"}
+
+conventions_docs:
+  - ../docs/pharma-metrics-conventions.md
+  - ../docs/pharma-metrics-guide.md
+
+validate:
+  # dbt parse needs a profile but not a connection; dummy values are enough offline.
+  parse: env DBT_PROFILES_DIR=target/metric-author/profiles REDSHIFT_HOST=localhost REDSHIFT_USER=x REDSHIFT_PASSWORD=x .venv/bin/python scripts/dbt_parse.py
+  metricflow_python: ../medical-data-service/backend/.venv/bin/python   # same metricflow pin as the MCP service
+  dialect: redshift
+  offline:
+    - ../medical-data-service/backend/.venv/bin/python scripts/semantic/compile_saved_queries.py
+    - cd ../medical-data-service/backend && METRICFLOW_MANIFEST_PATH=../../medical-olap-dbt/target/semantic_manifest.json uv run pytest -q tests/test_mcp.py
+  warehouse:                    # only when the user asks for a warehouse check
+    - dbt test
+  refresh: bash ../medical-data-service/backend/refresh-manifest.sh

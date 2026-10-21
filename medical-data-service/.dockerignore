@@ -1,0 +1,8 @@
+**/node_modules
+**/.venv
+**/dist
+**/__pycache__
+**/.pytest_cache
+**/.npmcache
+**/.uvcache
+**/*.log

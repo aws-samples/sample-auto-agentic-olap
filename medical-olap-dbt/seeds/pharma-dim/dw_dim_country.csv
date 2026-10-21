@@ -1,0 +1,168 @@
+country_code,country_cn_short,country_cn_full,countryname_en,currency_code,language_code,timezone
+AE,阿联酋,阿拉伯联合酋长国,United Arab Emirates,AED,ar,UTC+4
+AF,阿富汗,阿富汗伊斯兰酋长国,Afghanistan,AFN,ps,UTC+4:30
+AL,阿尔巴尼亚,阿尔巴尼亚共和国,Albania,ALL,sq,UTC+1
+AM,亚美尼亚,亚美尼亚共和国,Armenia,AMD,hy,UTC+4
+AO,安哥拉,安哥拉共和国,Angola,AOA,pt,UTC+1
+AR,阿根廷,阿根廷共和国,Argentina,ARS,es,UTC-3
+AT,奥地利,奥地利共和国,Austria,EUR,de,UTC+1
+AU,澳大利亚,澳大利亚联邦,Australia,AUD,en,UTC+8 to +10.5
+AZ,阿塞拜疆,阿塞拜疆共和国,Azerbaijan,AZN,az,UTC+4
+BA,波黑,波斯尼亚和黑塞哥维那,Bosnia and Herzegovina,BAM,bs,UTC+1
+BD,孟加拉国,孟加拉人民共和国,Bangladesh,BDT,bn,UTC+6
+BE,比利时,比利时王国,Belgium,EUR,nl,UTC+1
+BF,布基纳法索,布基纳法索,Burkina Faso,XOF,fr,UTC+0
+BG,保加利亚,保加利亚共和国,Bulgaria,BGN,bg,UTC+2
+BI,布隆迪,布隆迪共和国,Burundi,BIF,fr,UTC+2
+BJ,贝宁,贝宁共和国,Benin,XOF,fr,UTC+1
+BO,玻利维亚,玻利维亚多民族国,Bolivia,BOB,es,UTC-4
+BR,巴西,巴西联邦共和国,Brazil,BRL,pt,UTC-2 to -5
+BT,不丹,不丹王国,Bhutan,BTN,dz,UTC+6
+BW,博茨瓦纳,博茨瓦纳共和国,Botswana,BWP,en,UTC+2
+BY,白俄罗斯,白俄罗斯共和国,Belarus,BYN,be,UTC+3
+BZ,伯利兹,伯利兹,Belize,BZD,en,UTC-6
+CA,加拿大,加拿大,Canada,CAD,en,UTC-3.5 to -8
+CD,刚果(金),刚果民主共和国,Democratic Republic of the Congo,CDF,fr,UTC+1 to +2
+CF,中非,中非共和国,Central African Republic,XAF,fr,UTC+1
+CG,刚果(布),刚果共和国,Republic of the Congo,XAF,fr,UTC+1
+CH,瑞士,瑞士联邦,Switzerland,CHF,de,UTC+1
+CI,科特迪瓦,科特迪瓦共和国,Ivory Coast,XOF,fr,UTC+0
+CL,智利,智利共和国,Chile,CLP,es,UTC-4
+CM,喀麦隆,喀麦隆共和国,Cameroon,XAF,fr,UTC+1
+CN,中国,中华人民共和国,China,CNY,zh,UTC+8
+CO,哥伦比亚,哥伦比亚共和国,Colombia,COP,es,UTC-5
+CR,哥斯达黎加,哥斯达黎加共和国,Costa Rica,CRC,es,UTC-6
+CU,古巴,古巴共和国,Cuba,CUP,es,UTC-5
+CV,佛得角,佛得角共和国,Cape Verde,CVE,pt,UTC-1
+CY,塞浦路斯,塞浦路斯共和国,Cyprus,EUR,el,UTC+2
+CZ,捷克,捷克共和国,Czech Republic,CZK,cs,UTC+1
+DE,德国,德意志联邦共和国,Germany,EUR,de,UTC+1
+DJ,吉布提,吉布提共和国,Djibouti,DJF,fr,UTC+3
+DK,丹麦,丹麦王国,Denmark,DKK,da,UTC+1
+DO,多米尼加,多米尼加共和国,Dominican Republic,DOP,es,UTC-4
+DZ,阿尔及利亚,阿尔及利亚民主人民共和国,Algeria,DZD,ar,UTC+1
+EC,厄瓜多尔,厄瓜多尔共和国,Ecuador,USD,es,UTC-5
+EE,爱沙尼亚,爱沙尼亚共和国,Estonia,EUR,et,UTC+2
+EG,埃及,阿拉伯埃及共和国,Egypt,EGP,ar,UTC+2
+ER,厄立特里亚,厄立特里亚国,Eritrea,ERN,ti,UTC+3
+ES,西班牙,西班牙王国,Spain,EUR,es,UTC+1
+ET,埃塞俄比亚,埃塞俄比亚联邦民主共和国,Ethiopia,ETB,am,UTC+3
+FI,芬兰,芬兰共和国,Finland,EUR,fi,UTC+2
+FJ,斐济,斐济共和国,Fiji,FJD,en,UTC+12
+FR,法国,法兰西共和国,France,EUR,fr,UTC+1
+GA,加蓬,加蓬共和国,Gabon,XAF,fr,UTC+1
+GB,英国,大不列颠及北爱尔兰联合王国,United Kingdom,GBP,en,UTC+0
+GE,格鲁吉亚,格鲁吉亚,Georgia,GEL,ka,UTC+4
+GF,法属圭亚那,法属圭亚那,French Guiana,EUR,fr,UTC-3
+GH,加纳,加纳共和国,Ghana,GHS,en,UTC+0
+GM,冈比亚,冈比亚共和国,Gambia,GMD,en,UTC+0
+GN,几内亚,几内亚共和国,Guinea,GNF,fr,UTC+0
+GQ,赤道几内亚,赤道几内亚共和国,Equatorial Guinea,XAF,es,UTC+1
+GR,希腊,希腊共和国,Greece,EUR,el,UTC+2
+GT,危地马拉,危地马拉共和国,Guatemala,GTQ,es,UTC-6
+GY,圭亚那,圭亚那合作共和国,Guyana,GYD,en,UTC-4
+HN,洪都拉斯,洪都拉斯共和国,Honduras,HNL,es,UTC-6
+HR,克罗地亚,克罗地亚共和国,Croatia,EUR,hr,UTC+1
+HT,海地,海地共和国,Haiti,HTG,fr,UTC-5
+HU,匈牙利,匈牙利,Hungary,HUF,hu,UTC+1
+ID,印度尼西亚,印度尼西亚共和国,Indonesia,IDR,id,UTC+7 to +9
+IE,爱尔兰,爱尔兰,Ireland,EUR,en,UTC+0
+IL,以色列,以色列国,Israel,ILS,he,UTC+2
+IN,印度,印度共和国,India,INR,hi,UTC+5:30
+IQ,伊拉克,伊拉克共和国,Iraq,IQD,ar,UTC+3
+IR,伊朗,伊朗伊斯兰共和国,Iran,IRR,fa,UTC+3:30
+IS,冰岛,冰岛共和国,Iceland,ISK,is,UTC+0
+IT,意大利,意大利共和国,Italy,EUR,it,UTC+1
+JM,牙买加,牙买加,Jamaica,JMD,en,UTC-5
+JO,约旦,约旦哈希姆王国,Jordan,JOD,ar,UTC+2
+JP,日本,日本国,Japan,JPY,ja,UTC+9
+KE,肯尼亚,肯尼亚共和国,Kenya,KES,en,UTC+3
+KG,吉尔吉斯斯坦,吉尔吉斯共和国,Kyrgyzstan,KGS,ky,UTC+6
+KH,柬埔寨,柬埔寨王国,Cambodia,KHR,km,UTC+7
+KP,朝鲜,朝鲜民主主义人民共和国,North Korea,KPW,ko,UTC+9
+KR,韩国,大韩民国,South Korea,KRW,ko,UTC+9
+KW,科威特,科威特国,Kuwait,KWD,ar,UTC+3
+KZ,哈萨克斯坦,哈萨克斯坦共和国,Kazakhstan,KZT,kk,UTC+5 to +6
+LA,老挝,老挝人民民主共和国,Laos,LAK,lo,UTC+7
+LB,黎巴嫩,黎巴嫩共和国,Lebanon,LBP,ar,UTC+2
+LK,斯里兰卡,斯里兰卡民主社会主义共和国,Sri Lanka,LKR,si,UTC+5:30
+LR,利比里亚,利比里亚共和国,Liberia,LRD,en,UTC+0
+LS,莱索托,莱索托王国,Lesotho,LSL,en,UTC+2
+LT,立陶宛,立陶宛共和国,Lithuania,EUR,lt,UTC+2
+LU,卢森堡,卢森堡大公国,Luxembourg,EUR,lb,UTC+1
+LV,拉脱维亚,拉脱维亚共和国,Latvia,EUR,lv,UTC+2
+LY,利比亚,利比亚国,Libya,LYD,ar,UTC+2
+MA,摩洛哥,摩洛哥王国,Morocco,MAD,ar,UTC+0
+ME,黑山,黑山,Montenegro,EUR,sr,UTC+1
+MG,马达加斯加,马达加斯加共和国,Madagascar,MGA,mg,UTC+3
+MK,北马其顿,北马其顿共和国,North Macedonia,MKD,mk,UTC+1
+ML,马里,马里共和国,Mali,XOF,fr,UTC+0
+MM,缅甸,缅甸联邦共和国,Myanmar,MMK,my,UTC+6:30
+MN,蒙古,蒙古国,Mongolia,MNT,mn,UTC+7 to +8
+MR,毛里塔尼亚,毛里塔尼亚伊斯兰共和国,Mauritania,MRU,ar,UTC+0
+MT,马耳他,马耳他共和国,Malta,EUR,mt,UTC+1
+MU,毛里求斯,毛里求斯共和国,Mauritius,MUR,en,UTC+4
+MW,马拉维,马拉维共和国,Malawi,MWK,en,UTC+2
+MX,墨西哥,墨西哥合众国,Mexico,MXN,es,UTC-6 to -8
+MY,马来西亚,马来西亚联邦,Malaysia,MYR,ms,UTC+8
+MZ,莫桑比克,莫桑比克共和国,Mozambique,MZN,pt,UTC+2
+NA,纳米比亚,纳米比亚共和国,Namibia,NAD,en,UTC+1
+NC,新喀里多尼亚,新喀里多尼亚,New Caledonia,XPF,fr,UTC+11
+NE,尼日尔,尼日尔共和国,Niger,XOF,fr,UTC+1
+NG,尼日利亚,尼日利亚联邦共和国,Nigeria,NGN,en,UTC+1
+NI,尼加拉瓜,尼加拉瓜共和国,Nicaragua,NIO,es,UTC-6
+NL,荷兰,荷兰王国,Netherlands,EUR,nl,UTC+1
+NO,挪威,挪威王国,Norway,NOK,no,UTC+1
+NP,尼泊尔,尼泊尔联邦民主共和国,Nepal,NPR,ne,UTC+5:45
+NZ,新西兰,新西兰,New Zealand,NZD,en,UTC+12
+OM,阿曼,阿曼苏丹国,Oman,OMR,ar,UTC+4
+PA,巴拿马,巴拿马共和国,Panama,PAB,es,UTC-5
+PE,秘鲁,秘鲁共和国,Peru,PEN,es,UTC-5
+PF,法属波利尼西亚,法属波利尼西亚,French Polynesia,XPF,fr,UTC-10 to -9
+PG,巴布亚新几内亚,巴布亚新几内亚独立国,Papua New Guinea,PGK,en,UTC+10
+PH,菲律宾,菲律宾共和国,Philippines,PHP,en,UTC+8
+PK,巴基斯坦,巴基斯坦伊斯兰共和国,Pakistan,PKR,ur,UTC+5
+PL,波兰,波兰共和国,Poland,PLN,pl,UTC+1
+PT,葡萄牙,葡萄牙共和国,Portugal,EUR,pt,UTC+0
+PY,巴拉圭,巴拉圭共和国,Paraguay,PYG,es,UTC-4
+QA,卡塔尔,卡塔尔国,Qatar,QAR,ar,UTC+3
+RO,罗马尼亚,罗马尼亚,Romania,RON,ro,UTC+2
+RS,塞尔维亚,塞尔维亚共和国,Serbia,RSD,sr,UTC+1
+RU,俄罗斯,俄罗斯联邦,Russia,RUB,ru,UTC+2 to +12
+RW,卢旺达,卢旺达共和国,Rwanda,RWF,rw,UTC+2
+SA,沙特阿拉伯,沙特阿拉伯王国,Saudi Arabia,SAR,ar,UTC+3
+SB,所罗门群岛,所罗门群岛,Solomon Islands,SBD,en,UTC+11
+SC,塞舌尔,塞舌尔共和国,Seychelles,SCR,en,UTC+4
+SD,苏丹,苏丹共和国,Sudan,SDG,ar,UTC+2
+SE,瑞典,瑞典王国,Sweden,SEK,sv,UTC+1
+SG,新加坡,新加坡共和国,Singapore,SGD,en,UTC+8
+SI,斯洛文尼亚,斯洛文尼亚共和国,Slovenia,EUR,sl,UTC+1
+SK,斯洛伐克,斯洛伐克共和国,Slovakia,EUR,sk,UTC+1
+SL,塞拉利昂,塞拉利昂共和国,Sierra Leone,SLL,en,UTC+0
+SN,塞内加尔,塞内加尔共和国,Senegal,XOF,fr,UTC+0
+SO,索马里,索马里联邦共和国,Somalia,SOS,so,UTC+3
+SR,苏里南,苏里南共和国,Suriname,SRD,nl,UTC-3
+SS,南苏丹,南苏丹共和国,South Sudan,SSP,en,UTC+2
+SV,萨尔瓦多,萨尔瓦多共和国,El Salvador,USD,es,UTC-6
+SY,叙利亚,阿拉伯叙利亚共和国,Syria,SYP,ar,UTC+2
+SZ,斯威士兰,斯威士兰王国,Eswatini,SZL,en,UTC+2
+TD,乍得,乍得共和国,Chad,XAF,fr,UTC+1
+TG,多哥,多哥共和国,Togo,XOF,fr,UTC+0
+TH,泰国,泰王国,Thailand,THB,th,UTC+7
+TJ,塔吉克斯坦,塔吉克斯坦共和国,Tajikistan,TJS,tg,UTC+5
+TM,土库曼斯坦,土库曼斯坦,Turkmenistan,TMT,tk,UTC+5
+TN,突尼斯,突尼斯共和国,Tunisia,TND,ar,UTC+1
+TR,土耳其,土耳其共和国,Turkey,TRY,tr,UTC+3
+TZ,坦桑尼亚,坦桑尼亚联合共和国,Tanzania,TZS,sw,UTC+3
+UA,乌克兰,乌克兰,Ukraine,UAH,uk,UTC+2
+UG,乌干达,乌干达共和国,Uganda,UGX,en,UTC+3
+US,美国,美利坚合众国,United States,USD,en,UTC-5 to -10
+UY,乌拉圭,乌拉圭东岸共和国,Uruguay,UYU,es,UTC-3
+UZ,乌兹别克斯坦,乌兹别克斯坦共和国,Uzbekistan,UZS,uz,UTC+5
+VE,委内瑞拉,委内瑞拉玻利瓦尔共和国,Venezuela,VES,es,UTC-4
+VN,越南,越南社会主义共和国,Vietnam,VND,vi,UTC+7
+VU,瓦努阿图,瓦努阿图共和国,Vanuatu,VUV,en,UTC+11
+YE,也门,也门共和国,Yemen,YER,ar,UTC+3
+ZA,南非,南非共和国,South Africa,ZAR,en,UTC+2
+ZM,赞比亚,赞比亚共和国,Zambia,ZMW,en,UTC+2
+ZW,津巴布韦,津巴布韦共和国,Zimbabwe,ZWL,en,UTC+2

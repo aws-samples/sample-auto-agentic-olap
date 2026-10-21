@@ -1,0 +1,186 @@
+version: 2
+
+# Query-time metrics only. No model, table, view, export or materialization.
+metrics:
+  - name: pharma_sales_prior_year
+    label: Prior-year same-period actual sales value
+    type: derived
+    expr: previous_value
+    input_metrics:
+      - name: pharma_sales_value
+        alias: previous_value
+        offset_window: 1 year
+  - name: pharma_sales_yoy_change
+    label: Actual sales YoY change
+    type: derived
+    expr: current_value - previous_value
+    input_metrics:
+      - name: pharma_sales_value
+        alias: current_value
+      - name: pharma_sales_prior_year
+        alias: previous_value
+  - name: pharma_sales_yoy_rate
+    label: Actual sales YoY rate
+    type: derived
+    expr: "case when previous_value > 0 then (current_value - previous_value) / previous_value end"
+    input_metrics:
+      - name: pharma_sales_value
+        alias: current_value
+      - name: pharma_sales_prior_year
+        alias: previous_value
+  - name: pharma_sales_prior_month
+    label: Prior-month actual sales value
+    type: derived
+    expr: previous_value
+    input_metrics:
+      - name: pharma_sales_value
+        alias: previous_value
+        offset_window: 1 month
+  - name: pharma_sales_mom_change
+    label: Actual sales MoM change
+    type: derived
+    expr: current_value - previous_value
+    input_metrics:
+      - name: pharma_sales_value
+        alias: current_value
+      - name: pharma_sales_prior_month
+        alias: previous_value
+  - name: pharma_sales_mom_rate
+    label: Actual sales MoM rate
+    type: derived
+    expr: "case when previous_value > 0 then (current_value - previous_value) / previous_value end"
+    input_metrics:
+      - name: pharma_sales_value
+        alias: current_value
+      - name: pharma_sales_prior_month
+        alias: previous_value
+  - name: pharma_sales_qoq_change
+    label: Full-quarter actual sales QoQ change
+    type: derived
+    time_granularity: quarter
+    expr: current_value - previous_value
+    input_metrics:
+      - name: pharma_sales_value
+        alias: current_value
+      - name: pharma_sales_value
+        alias: previous_value
+        offset_window: 1 quarter
+  - name: pharma_sales_qoq_rate
+    label: Full-quarter actual sales QoQ rate
+    type: derived
+    time_granularity: quarter
+    expr: "case when previous_value > 0 then (current_value - previous_value) / previous_value end"
+    input_metrics:
+      - name: pharma_sales_value
+        alias: current_value
+      - name: pharma_sales_value
+        alias: previous_value
+        offset_window: 1 quarter
+  - name: pharma_sales_ytd
+    label: YTD actual sales value
+    type: cumulative
+    input_metric: pharma_sales_value
+    grain_to_date: year
+    period_agg: last
+  - name: pharma_sales_qtd
+    label: QTD actual sales value
+    type: cumulative
+    input_metric: pharma_sales_value
+    grain_to_date: quarter
+    period_agg: last
+  - name: pharma_budget_ytd
+    label: YTD budget value
+    type: cumulative
+    input_metric: pharma_budget_value
+    grain_to_date: year
+    period_agg: last
+  - name: pharma_budget_qtd
+    label: QTD budget value
+    type: cumulative
+    input_metric: pharma_budget_value
+    grain_to_date: quarter
+    period_agg: last
+  - name: pharma_forecast_ytd
+    label: YTD forecast value
+    type: cumulative
+    input_metric: pharma_forecast_value
+    grain_to_date: year
+    period_agg: last
+  - name: pharma_forecast_qtd
+    label: QTD forecast value
+    type: cumulative
+    input_metric: pharma_forecast_value
+    grain_to_date: quarter
+    period_agg: last
+  - name: pharma_sales_ytd_yoy_change
+    label: YTD actual sales YoY change
+    type: derived
+    expr: current_value - previous_value
+    input_metrics:
+      - name: pharma_sales_ytd
+        alias: current_value
+      - name: pharma_sales_ytd
+        alias: previous_value
+        offset_window: 1 year
+  - name: pharma_sales_ytd_yoy_rate
+    label: YTD actual sales YoY rate
+    type: derived
+    expr: "case when previous_value > 0 then (current_value - previous_value) / previous_value end"
+    input_metrics:
+      - name: pharma_sales_ytd
+        alias: current_value
+      - name: pharma_sales_ytd
+        alias: previous_value
+        offset_window: 1 year
+  - name: pharma_sales_qtd_yoy_change
+    label: QTD actual sales YoY change
+    type: derived
+    expr: current_value - previous_value
+    input_metrics:
+      - name: pharma_sales_qtd
+        alias: current_value
+      - name: pharma_sales_qtd
+        alias: previous_value
+        offset_window: 1 year
+  - name: pharma_sales_qtd_yoy_rate
+    label: QTD actual sales YoY rate
+    type: derived
+    expr: "case when previous_value > 0 then (current_value - previous_value) / previous_value end"
+    input_metrics:
+      - name: pharma_sales_qtd
+        alias: current_value
+      - name: pharma_sales_qtd
+        alias: previous_value
+        offset_window: 1 year
+  - name: pharma_sales_rolling_3m
+    label: Rolling 3-month actual sales value
+    description: Month-grain query; unavailable if any of the three months has no records.
+    type: derived
+    expr: current_value + previous_value + earlier_value
+    input_metrics:
+      - name: pharma_sales_value
+        alias: current_value
+      - name: pharma_sales_value
+        alias: previous_value
+        offset_window: 1 month
+      - name: pharma_sales_value
+        alias: earlier_value
+        offset_window: 2 months
+  - name: pharma_same_package_average_value
+    label: Same-package net shipment average price (raw quantity unit)
+    description: Not a terminal price; refuses mixed packages, incomplete inputs and nonpositive net quantity.
+    type: derived
+    expr: "case when package_count = 1 and missing_packages = 0 and missing_quantity = 0 and missing_amount = 0 and quantity_value > 0 then amount_value / quantity_value end"
+    input_metrics:
+      - name: pharma_sales_value
+        alias: amount_value
+      - name: pharma_sales_quantity
+        alias: quantity_value
+      - name: pharma_actual_package_count
+        alias: package_count
+      - name: pharma_missing_package_rows
+        alias: missing_packages
+      - name: pharma_quantity_null_rows
+        alias: missing_quantity
+      - name: pharma_actual_null_rows
+        alias: missing_amount

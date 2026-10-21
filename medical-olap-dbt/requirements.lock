@@ -1,0 +1,10 @@
+# Resolved on 2026-08-13 with uv on Python 3.13.
+# MetricFlow main commit tested by dbt parse/run:
+# https://github.com/dbt-labs/metricflow/commit/afab9635481dd3e32a9f1895f37ca83bde08a920
+#
+# Installed key versions:
+# dbt-core==1.12.2
+# dbt-redshift==1.11.0
+# metricflow==0.213.0.dev0
+#
+# Re-resolve this file only after validating the new MetricFlow main commit.

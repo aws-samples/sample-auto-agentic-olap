@@ -1,0 +1,321 @@
+version: 2
+
+# Pharma currently provides pre-aggregated data-mart tables rather than atomic
+# orders or forecast events. Metrics here are therefore limited to additive
+# amounts and quantities that are safe to sum from the supplied monthly grain.
+models:
+  - name: pharma_sales_detail
+    description: >-
+      Monthly actual-sales aggregate at month, country, package, distributor,
+      control flag, sales type and business-unit grain. Negative values are
+      retained because they can represent returns or accounting adjustments.
+    semantic_model:
+      enabled: true
+      name: pharma_sales_actuals
+    primary_entity: pharma_sales_detail
+    agg_time_dimension: sales_month
+    columns:
+      - name: sales_detail_id
+        description: Stable hash of the supplied aggregate grain.
+        tests: [not_null, unique]
+      - name: sales_month
+        granularity: month
+        dimension:
+          type: time
+          name: sales_month
+        tests: [not_null]
+      - name: comparable_cell_id
+        description: >-
+          Shared nullable month-country-brand-sales-type key used only to compare
+          actual, budget and forecast at the same business grain.
+        entity:
+          type: foreign
+          name: pharma_comparable_cell
+      - name: yearmonth
+      - name: quarter
+        dimension:
+          type: categorical
+          name: sales_quarter
+      - name: country_code
+        entity:
+          type: foreign
+          name: pharma_country
+        tests: [not_null]
+      - name: package_code
+        entity:
+          type: foreign
+          name: pharma_package
+      - name: brand_code
+        entity:
+          type: foreign
+          name: pharma_brand
+        dimension:
+          type: categorical
+          name: brand_code
+      - name: distributor_code
+        dimension:
+          type: categorical
+          name: distributor_code
+      - name: control_flag
+        dimension:
+          type: categorical
+          name: control_flag
+      - name: sales_type
+        entity:
+          type: foreign
+          name: pharma_sales_type
+        dimension:
+          type: categorical
+          name: sales_type
+      - name: bu_code
+        dimension:
+          type: categorical
+          name: bu_code
+      - name: sales_quantity
+      - name: sales_value
+      - name: unsplit_sales_quantity
+    metrics:
+      - name: pharma_sales_quantity
+        description: Net actual sales quantity, including returns and adjustments.
+        label: Actual sales quantity
+        type: simple
+        agg: sum
+        expr: sales_quantity
+      - name: pharma_sales_value
+        description: Net actual sales value, including returns and adjustments.
+        label: Actual sales value
+        type: simple
+        agg: sum
+        expr: sales_value
+      - name: pharma_actual_value_with_budget
+        description: Actual value only for complete comparable cells that also have a complete budget.
+        label: Actual sales value in budget-comparable cells
+        type: simple
+        agg: sum
+        expr: sales_value
+        filter: >-
+          {{ Metric('pharma_budget_value', group_by=['pharma_comparable_cell']) }} is not null
+          and {{ Metric('pharma_actual_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+          and {{ Metric('pharma_budget_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+      - name: pharma_actual_value_with_forecast
+        description: Actual value only for complete comparable cells that also have a complete forecast.
+        label: Actual sales value in forecast-comparable cells
+        type: simple
+        agg: sum
+        expr: sales_value
+        filter: >-
+          {{ Metric('pharma_forecast_value', group_by=['pharma_comparable_cell']) }} is not null
+          and {{ Metric('pharma_actual_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+          and {{ Metric('pharma_forecast_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+      - name: pharma_unsplit_sales_quantity
+        description: Quantity before the source system's allocation or split logic.
+        label: Unsplit sales quantity
+        type: simple
+        agg: sum
+        expr: unsplit_sales_quantity
+      - name: pharma_actual_rows
+        label: Actual summary row count (not order count)
+        type: simple
+        agg: sum
+        expr: '1'
+      - name: pharma_actual_null_rows
+        label: Rows missing actual amount
+        type: simple
+        agg: sum
+        expr: 'case when sales_value is null then 1 else 0 end'
+      - name: pharma_negative_sales_value
+        label: Absolute negative sales adjustment (not returns)
+        type: simple
+        agg: sum
+        expr: 'case when sales_value < 0 then -sales_value else 0 end'
+      - name: pharma_negative_sales_rows
+        label: Negative sales row count (not return-order count)
+        type: simple
+        agg: sum
+        expr: 'case when sales_value < 0 then 1 else 0 end'
+      - name: pharma_actual_package_count
+        label: Actual package-code count (average-price check)
+        type: simple
+        agg: count_distinct
+        expr: "nullif(package_code, '')"
+      - name: pharma_missing_package_rows
+        label: Rows missing package code
+        type: simple
+        agg: sum
+        expr: "case when nullif(package_code, '') is null then 1 else 0 end"
+      - name: pharma_quantity_null_rows
+        label: Rows missing actual quantity
+        type: simple
+        agg: sum
+        expr: 'case when sales_quantity is null then 1 else 0 end'
+      - name: pharma_missing_brand_value
+        label: Sales value with missing brand code
+        type: simple
+        agg: sum
+        expr: "case when nullif(brand_code, '') is null then sales_value else 0 end"
+      - name: pharma_missing_sales_type_rows
+        label: Rows missing sales type
+        type: simple
+        agg: sum
+        expr: case when nullif(sales_type, '') is null then 1 else 0 end
+
+  - name: pharma_sales_forecast
+    description: >-
+      Monthly budget and forecast aggregate at month, brand, source package
+      label, country, sales type and data type grain. package_name is kept as a
+      local dimension because its labels do not map one-to-one to package_code
+      in the product dimension.
+    semantic_model:
+      enabled: true
+      name: pharma_sales_plans
+    primary_entity: pharma_sales_forecast
+    agg_time_dimension: forecast_month
+    columns:
+      - name: sales_forecast_id
+        description: Stable hash of the supplied aggregate grain.
+        tests: [not_null, unique]
+      - name: forecast_month
+        granularity: month
+        dimension:
+          type: time
+          name: forecast_month
+        tests: [not_null]
+      - name: comparable_cell_id
+        description: >-
+          Shared nullable month-country-brand-sales-type key used only to compare
+          actual, budget and forecast at the same business grain.
+        entity:
+          type: foreign
+          name: pharma_comparable_cell
+      - name: yearmonth
+      - name: country_code
+        entity:
+          type: foreign
+          name: pharma_country
+        tests: [not_null]
+      - name: brand_code
+        entity:
+          type: foreign
+          name: pharma_brand
+        dimension:
+          type: categorical
+          name: brand_code
+      - name: package_name
+        dimension:
+          type: categorical
+          name: package_name
+      - name: sales_type
+        entity:
+          type: foreign
+          name: pharma_sales_type
+        dimension:
+          type: categorical
+          name: sales_type
+      - name: data_type
+        description: Source scenario; bgt means budget and fcst means forecast.
+        dimension:
+          type: categorical
+          name: data_type
+        tests:
+          - accepted_values:
+              arguments:
+                values: [bgt, fcst]
+      - name: planned_quantity
+      - name: planned_value
+    metrics:
+      - name: pharma_budget_quantity
+        description: Budget quantity (data_type = bgt).
+        label: Budget quantity
+        type: simple
+        agg: sum
+        expr: planned_quantity
+        filter: "{{ Dimension('pharma_sales_forecast__data_type') }} = 'bgt'"
+      - name: pharma_budget_value
+        description: Budget value (data_type = bgt).
+        label: Budget value
+        type: simple
+        agg: sum
+        expr: planned_value
+        filter: "{{ Dimension('pharma_sales_forecast__data_type') }} = 'bgt'"
+      - name: pharma_forecast_quantity
+        description: Forecast quantity (data_type = fcst).
+        label: Forecast quantity
+        type: simple
+        agg: sum
+        expr: planned_quantity
+        filter: "{{ Dimension('pharma_sales_forecast__data_type') }} = 'fcst'"
+      - name: pharma_forecast_value
+        description: Forecast value (data_type = fcst).
+        label: Forecast value
+        type: simple
+        agg: sum
+        expr: planned_value
+        filter: "{{ Dimension('pharma_sales_forecast__data_type') }} = 'fcst'"
+      - name: pharma_budget_value_with_actual
+        description: Budget value only for complete comparable cells that also have complete actuals.
+        label: Budget value in actual-comparable cells
+        type: simple
+        agg: sum
+        expr: planned_value
+        filter: >-
+          {{ Dimension('pharma_sales_forecast__data_type') }} = 'bgt'
+          and {{ Metric('pharma_sales_value', group_by=['pharma_comparable_cell']) }} is not null
+          and {{ Metric('pharma_actual_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+          and {{ Metric('pharma_budget_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+      - name: pharma_budget_value_with_forecast
+        description: Budget value only for complete comparable cells that also have a complete forecast.
+        label: Budget value in forecast-comparable cells
+        type: simple
+        agg: sum
+        expr: planned_value
+        filter: >-
+          {{ Dimension('pharma_sales_forecast__data_type') }} = 'bgt'
+          and {{ Metric('pharma_forecast_value', group_by=['pharma_comparable_cell']) }} is not null
+          and {{ Metric('pharma_budget_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+          and {{ Metric('pharma_forecast_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+      - name: pharma_forecast_value_with_actual
+        description: Forecast value only for complete comparable cells that also have complete actuals.
+        label: Forecast value in actual-comparable cells
+        type: simple
+        agg: sum
+        expr: planned_value
+        filter: >-
+          {{ Dimension('pharma_sales_forecast__data_type') }} = 'fcst'
+          and {{ Metric('pharma_sales_value', group_by=['pharma_comparable_cell']) }} is not null
+          and {{ Metric('pharma_actual_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+          and {{ Metric('pharma_forecast_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+      - name: pharma_forecast_value_with_budget
+        description: Forecast value only for complete comparable cells that also have a complete budget.
+        label: Forecast value in budget-comparable cells
+        type: simple
+        agg: sum
+        expr: planned_value
+        filter: >-
+          {{ Dimension('pharma_sales_forecast__data_type') }} = 'fcst'
+          and {{ Metric('pharma_budget_value', group_by=['pharma_comparable_cell']) }} is not null
+          and {{ Metric('pharma_budget_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+          and {{ Metric('pharma_forecast_null_rows', group_by=['pharma_comparable_cell']) }} = 0
+      - name: pharma_budget_rows
+        label: Budget summary row count
+        type: simple
+        agg: sum
+        expr: '1'
+        filter: "{{ Dimension('pharma_sales_forecast__data_type') }} = 'bgt'"
+      - name: pharma_budget_null_rows
+        label: Rows missing budget amount
+        type: simple
+        agg: sum
+        expr: 'case when planned_value is null then 1 else 0 end'
+        filter: "{{ Dimension('pharma_sales_forecast__data_type') }} = 'bgt'"
+      - name: pharma_forecast_rows
+        label: Forecast summary row count
+        type: simple
+        agg: sum
+        expr: '1'
+        filter: "{{ Dimension('pharma_sales_forecast__data_type') }} = 'fcst'"
+      - name: pharma_forecast_null_rows
+        label: Rows missing forecast amount
+        type: simple
+        agg: sum
+        expr: 'case when planned_value is null then 1 else 0 end'
+        filter: "{{ Dimension('pharma_sales_forecast__data_type') }} = 'fcst'"

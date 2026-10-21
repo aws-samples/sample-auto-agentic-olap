@@ -1,0 +1,97 @@
+version: 2
+
+models:
+  - name: pharma_dim_country
+    description: >-
+      Pharma country dimension enriched with its one-to-one sales region mapping.
+      Countries without a region mapping remain available with null region fields.
+    semantic_model:
+      enabled: true
+      name: pharma_countries
+    columns:
+      - name: country_code
+        description: ISO-style country code used by the Pharma marts.
+        entity:
+          type: primary
+          name: pharma_country
+        tests: [not_null, unique]
+      - name: country_cn_short
+        dimension:
+          type: categorical
+          name: country_cn_short
+      - name: country_cn_full
+        dimension:
+          type: categorical
+          name: country_cn_full
+      - name: country_name_en
+        dimension:
+          type: categorical
+          name: country_name_en
+      - name: currency_code
+        dimension:
+          type: categorical
+          name: currency_code
+      - name: language_code
+        dimension:
+          type: categorical
+          name: language_code
+      - name: timezone
+        dimension:
+          type: categorical
+          name: timezone
+      - name: region_code
+        dimension:
+          type: categorical
+          name: region_code
+      - name: region_name
+        dimension:
+          type: categorical
+          name: region_name
+      - name: region_sequence
+
+  - name: pharma_dim_product
+    description: Pharma package-level product dimension. One row per package code.
+    semantic_model:
+      enabled: true
+      name: pharma_products
+    columns:
+      - name: package_code
+        description: Package-level product key used by the actual-sales mart.
+        entity:
+          type: primary
+          name: pharma_package
+        tests: [not_null, unique]
+      - name: package_name
+        dimension:
+          type: categorical
+          name: package_name
+      - name: brand_code
+        dimension:
+          type: categorical
+          name: brand_code
+      - name: brand_name
+        dimension:
+          type: categorical
+          name: brand_name
+      - name: bu_code
+        dimension:
+          type: categorical
+          name: bu_code
+      - name: bu_name
+        dimension:
+          type: categorical
+          name: bu_name
+
+  - name: pharma_dim_region
+    description: >-
+      Country-to-region mapping used to enrich pharma_dim_country. This model is
+      not a separate semantic model because its key is the same country_code.
+    columns:
+      - name: country_code
+        tests: [not_null, unique]
+      - name: region_code
+        tests: [not_null]
+      - name: region_name
+        tests: [not_null]
+      - name: region_sequence
+        tests: [not_null]

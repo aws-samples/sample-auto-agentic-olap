@@ -1,0 +1,311 @@
+version: 2
+
+# Query-time comparisons only. The six source metrics first match complete
+# month-country-brand-sales-type cells through pharma_comparable_cell.
+metrics:
+  - name: pharma_actual_value_with_budget_qtd
+    label: QTD actual sales value in budget-comparable cells
+    type: cumulative
+    input_metric: pharma_actual_value_with_budget
+    grain_to_date: quarter
+    period_agg: last
+  - name: pharma_budget_value_with_actual_qtd
+    label: QTD budget value in actual-comparable cells
+    type: cumulative
+    input_metric: pharma_budget_value_with_actual
+    grain_to_date: quarter
+    period_agg: last
+  - name: pharma_actual_value_with_forecast_qtd
+    label: QTD actual sales value in forecast-comparable cells
+    type: cumulative
+    input_metric: pharma_actual_value_with_forecast
+    grain_to_date: quarter
+    period_agg: last
+  - name: pharma_forecast_value_with_actual_qtd
+    label: QTD forecast value in actual-comparable cells
+    type: cumulative
+    input_metric: pharma_forecast_value_with_actual
+    grain_to_date: quarter
+    period_agg: last
+  - name: pharma_budget_value_with_forecast_qtd
+    label: QTD budget value in forecast-comparable cells
+    type: cumulative
+    input_metric: pharma_budget_value_with_forecast
+    grain_to_date: quarter
+    period_agg: last
+  - name: pharma_forecast_value_with_budget_qtd
+    label: QTD forecast value in budget-comparable cells
+    type: cumulative
+    input_metric: pharma_forecast_value_with_budget
+    grain_to_date: quarter
+    period_agg: last
+
+  - name: pharma_actual_value_with_budget_ytd
+    label: YTD actual sales value in budget-comparable cells
+    type: cumulative
+    input_metric: pharma_actual_value_with_budget
+    grain_to_date: year
+    period_agg: last
+  - name: pharma_budget_value_with_actual_ytd
+    label: YTD budget value in actual-comparable cells
+    type: cumulative
+    input_metric: pharma_budget_value_with_actual
+    grain_to_date: year
+    period_agg: last
+  - name: pharma_actual_value_with_forecast_ytd
+    label: YTD actual sales value in forecast-comparable cells
+    type: cumulative
+    input_metric: pharma_actual_value_with_forecast
+    grain_to_date: year
+    period_agg: last
+  - name: pharma_forecast_value_with_actual_ytd
+    label: YTD forecast value in actual-comparable cells
+    type: cumulative
+    input_metric: pharma_forecast_value_with_actual
+    grain_to_date: year
+    period_agg: last
+  - name: pharma_budget_value_with_forecast_ytd
+    label: YTD budget value in forecast-comparable cells
+    type: cumulative
+    input_metric: pharma_budget_value_with_forecast
+    grain_to_date: year
+    period_agg: last
+  - name: pharma_forecast_value_with_budget_ytd
+    label: YTD forecast value in budget-comparable cells
+    type: cumulative
+    input_metric: pharma_forecast_value_with_budget
+    grain_to_date: year
+    period_agg: last
+
+  - name: pharma_budget_achievement
+    label: Monthly comparable budget achievement rate
+    type: derived
+    expr: "case when budget_value > 0 then actual_value / budget_value end"
+    input_metrics:
+      - name: pharma_actual_value_with_budget
+        alias: actual_value
+      - name: pharma_budget_value_with_actual
+        alias: budget_value
+  - name: pharma_budget_variance
+    label: Monthly comparable budget variance
+    type: derived
+    expr: actual_value - budget_value
+    input_metrics:
+      - name: pharma_actual_value_with_budget
+        alias: actual_value
+      - name: pharma_budget_value_with_actual
+        alias: budget_value
+  - name: pharma_budget_gap
+    label: Monthly comparable budget net gap
+    type: derived
+    expr: "case when actual_value is not null and budget_value is not null then greatest(budget_value - actual_value, 0) end"
+    input_metrics:
+      - name: pharma_actual_value_with_budget
+        alias: actual_value
+      - name: pharma_budget_value_with_actual
+        alias: budget_value
+  - name: pharma_forecast_achievement
+    label: Monthly comparable forecast achievement rate
+    type: derived
+    expr: "case when forecast_value > 0 then actual_value / forecast_value end"
+    input_metrics:
+      - name: pharma_actual_value_with_forecast
+        alias: actual_value
+      - name: pharma_forecast_value_with_actual
+        alias: forecast_value
+  - name: pharma_forecast_variance
+    label: Monthly comparable forecast variance
+    type: derived
+    expr: actual_value - forecast_value
+    input_metrics:
+      - name: pharma_actual_value_with_forecast
+        alias: actual_value
+      - name: pharma_forecast_value_with_actual
+        alias: forecast_value
+  - name: pharma_forecast_budget_variance
+    label: Monthly comparable forecast-budget variance
+    type: derived
+    expr: forecast_value - budget_value
+    input_metrics:
+      - name: pharma_forecast_value_with_budget
+        alias: forecast_value
+      - name: pharma_budget_value_with_forecast
+        alias: budget_value
+  - name: pharma_forecast_budget_rate
+    label: Monthly comparable forecast-to-budget ratio
+    type: derived
+    expr: "case when budget_value > 0 then forecast_value / budget_value end"
+    input_metrics:
+      - name: pharma_forecast_value_with_budget
+        alias: forecast_value
+      - name: pharma_budget_value_with_forecast
+        alias: budget_value
+
+  - name: pharma_budget_achievement_qtd
+    label: QTD comparable budget achievement rate
+    type: derived
+    expr: "case when budget_value > 0 then actual_value / budget_value end"
+    input_metrics:
+      - name: pharma_actual_value_with_budget_qtd
+        alias: actual_value
+      - name: pharma_budget_value_with_actual_qtd
+        alias: budget_value
+  - name: pharma_budget_variance_qtd
+    label: QTD comparable budget variance
+    type: derived
+    expr: actual_value - budget_value
+    input_metrics:
+      - name: pharma_actual_value_with_budget_qtd
+        alias: actual_value
+      - name: pharma_budget_value_with_actual_qtd
+        alias: budget_value
+  - name: pharma_budget_gap_qtd
+    label: QTD comparable budget net gap
+    type: derived
+    expr: "case when actual_value is not null and budget_value is not null then greatest(budget_value - actual_value, 0) end"
+    input_metrics:
+      - name: pharma_actual_value_with_budget_qtd
+        alias: actual_value
+      - name: pharma_budget_value_with_actual_qtd
+        alias: budget_value
+  - name: pharma_forecast_achievement_qtd
+    label: QTD comparable forecast achievement rate
+    type: derived
+    expr: "case when forecast_value > 0 then actual_value / forecast_value end"
+    input_metrics:
+      - name: pharma_actual_value_with_forecast_qtd
+        alias: actual_value
+      - name: pharma_forecast_value_with_actual_qtd
+        alias: forecast_value
+  - name: pharma_forecast_variance_qtd
+    label: QTD comparable forecast variance
+    type: derived
+    expr: actual_value - forecast_value
+    input_metrics:
+      - name: pharma_actual_value_with_forecast_qtd
+        alias: actual_value
+      - name: pharma_forecast_value_with_actual_qtd
+        alias: forecast_value
+  - name: pharma_forecast_budget_variance_qtd
+    label: QTD comparable forecast-budget variance
+    type: derived
+    expr: forecast_value - budget_value
+    input_metrics:
+      - name: pharma_forecast_value_with_budget_qtd
+        alias: forecast_value
+      - name: pharma_budget_value_with_forecast_qtd
+        alias: budget_value
+  - name: pharma_forecast_budget_rate_qtd
+    label: QTD comparable forecast-to-budget ratio
+    type: derived
+    expr: "case when budget_value > 0 then forecast_value / budget_value end"
+    input_metrics:
+      - name: pharma_forecast_value_with_budget_qtd
+        alias: forecast_value
+      - name: pharma_budget_value_with_forecast_qtd
+        alias: budget_value
+
+  - name: pharma_budget_achievement_ytd
+    label: YTD comparable budget achievement rate
+    type: derived
+    expr: "case when budget_value > 0 then actual_value / budget_value end"
+    input_metrics:
+      - name: pharma_actual_value_with_budget_ytd
+        alias: actual_value
+      - name: pharma_budget_value_with_actual_ytd
+        alias: budget_value
+  - name: pharma_budget_variance_ytd
+    label: YTD comparable budget variance
+    type: derived
+    expr: actual_value - budget_value
+    input_metrics:
+      - name: pharma_actual_value_with_budget_ytd
+        alias: actual_value
+      - name: pharma_budget_value_with_actual_ytd
+        alias: budget_value
+  - name: pharma_budget_gap_ytd
+    label: YTD comparable budget net gap
+    type: derived
+    expr: "case when actual_value is not null and budget_value is not null then greatest(budget_value - actual_value, 0) end"
+    input_metrics:
+      - name: pharma_actual_value_with_budget_ytd
+        alias: actual_value
+      - name: pharma_budget_value_with_actual_ytd
+        alias: budget_value
+  - name: pharma_forecast_achievement_ytd
+    label: YTD comparable forecast achievement rate
+    type: derived
+    expr: "case when forecast_value > 0 then actual_value / forecast_value end"
+    input_metrics:
+      - name: pharma_actual_value_with_forecast_ytd
+        alias: actual_value
+      - name: pharma_forecast_value_with_actual_ytd
+        alias: forecast_value
+  - name: pharma_forecast_variance_ytd
+    label: YTD comparable forecast variance
+    type: derived
+    expr: actual_value - forecast_value
+    input_metrics:
+      - name: pharma_actual_value_with_forecast_ytd
+        alias: actual_value
+      - name: pharma_forecast_value_with_actual_ytd
+        alias: forecast_value
+  - name: pharma_forecast_budget_variance_ytd
+    label: YTD comparable forecast-budget variance
+    type: derived
+    expr: forecast_value - budget_value
+    input_metrics:
+      - name: pharma_forecast_value_with_budget_ytd
+        alias: forecast_value
+      - name: pharma_budget_value_with_forecast_ytd
+        alias: budget_value
+  - name: pharma_forecast_budget_rate_ytd
+    label: YTD comparable forecast-to-budget ratio
+    type: derived
+    expr: "case when budget_value > 0 then forecast_value / budget_value end"
+    input_metrics:
+      - name: pharma_forecast_value_with_budget_ytd
+        alias: forecast_value
+      - name: pharma_budget_value_with_forecast_ytd
+        alias: budget_value
+
+  - name: pharma_growing_but_below_budget
+    label: Monthly growing-but-below-budget flag
+    type: derived
+    expr: "case when budget_achievement is null or growth_change is null then null when budget_achievement < 1 and growth_change > 0 then 1 else 0 end"
+    input_metrics:
+      - name: pharma_budget_achievement
+        alias: budget_achievement
+      - name: pharma_sales_yoy_change
+        alias: growth_change
+  - name: pharma_growing_but_below_budget_qtd
+    label: QTD growing-but-below-budget flag
+    type: derived
+    expr: "case when budget_achievement is null or growth_change is null then null when budget_achievement < 1 and growth_change > 0 then 1 else 0 end"
+    input_metrics:
+      - name: pharma_budget_achievement_qtd
+        alias: budget_achievement
+      - name: pharma_sales_qtd_yoy_change
+        alias: growth_change
+  - name: pharma_growing_but_below_budget_ytd
+    label: YTD growing-but-below-budget flag
+    type: derived
+    expr: "case when budget_achievement is null or growth_change is null then null when budget_achievement < 1 and growth_change > 0 then 1 else 0 end"
+    input_metrics:
+      - name: pharma_budget_achievement_ytd
+        alias: budget_achievement
+      - name: pharma_sales_ytd_yoy_change
+        alias: growth_change
+  - name: pharma_three_months_below_budget
+    label: Below budget for 3 consecutive months flag
+    type: derived
+    expr: "case when current_value is null or previous_value is null or earlier_value is null then null when current_value < 1 and previous_value < 1 and earlier_value < 1 then 1 else 0 end"
+    input_metrics:
+      - name: pharma_budget_achievement
+        alias: current_value
+      - name: pharma_budget_achievement
+        alias: previous_value
+        offset_window: 1 month
+      - name: pharma_budget_achievement
+        alias: earlier_value
+        offset_window: 2 months

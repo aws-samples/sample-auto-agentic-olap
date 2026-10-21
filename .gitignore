@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# dbt
+medical-olap-dbt/target/
+medical-olap-dbt/dbt_packages/
+medical-olap-dbt/logs/
+
+# Node / frontend
+node_modules/
+dist/
+
+# Local package/build caches (redirected here to avoid sandbox-restricted global caches)
+**/.npmcache/
+**/.uvcache/
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+tfplan
+*.tfplan
+
+# Docker buildx local state
+**/.buildx/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Environment tfvars with live values (prod.tfvars is a sanitized template, kept)
+infra/terraform/environments/dev.tfvars
+
+# Local secrets and profiles
+profiles.yml
+*.local
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*credentials*
+!*credentials*.example

@@ -1,0 +1,126 @@
+name: data-service
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - "medical-data-service/**"
+      - ".github/workflows/data-service.yml"
+  pull_request:
+    paths:
+      - "medical-data-service/**"
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: medical-data-service/backend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+      - name: Run tests
+        # dbt's target/ is not committed; test against the manifest baked
+        # into the image.
+        env:
+          METRICFLOW_MANIFEST_PATH: semantic_manifest.json
+        run: uv run --extra dev python -m pytest -q
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: medical-data-service/frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - run: npm ci || npm install
+      - run: npm run build
+
+  deploy:
+    needs: [backend-test, frontend-build]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ secrets.DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
+
+      # The UI and the API ship in one image and answer on one hostname, so the
+      # frontend build happens inside the Dockerfile. Build context is the
+      # medical-data-service directory because the image needs both trees.
+      - name: Build and push image
+        working-directory: medical-data-service
+        run: |
+          IMAGE="${{ steps.ecr.outputs.registry }}/medical-data-service:${GITHUB_SHA::12}"
+          docker build -f backend/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Register image in a new task definition
+        run: |
+          CURRENT_TASK=$(aws ecs describe-services \
+            --cluster medical-prod-cluster \
+            --services medical-prod-service \
+            --query 'services[0].taskDefinition' \
+            --output text)
+          aws ecs describe-task-definition \
+            --task-definition "$CURRENT_TASK" \
+            --query taskDefinition > current-task.json
+          jq --arg image "$IMAGE" '
+            {
+              family,
+              taskRoleArn,
+              executionRoleArn,
+              networkMode,
+              containerDefinitions,
+              volumes,
+              placementConstraints,
+              requiresCompatibilities,
+              cpu,
+              memory,
+              runtimePlatform,
+              ephemeralStorage
+            }
+            | .containerDefinitions |= map(
+                if .name == "data-service" then .image = $image else . end
+              )
+            | with_entries(select(.value != null))
+          ' current-task.json > next-task.json
+          NEW_TASK=$(aws ecs register-task-definition \
+            --cli-input-json file://next-task.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          echo "NEW_TASK=$NEW_TASK" >> "$GITHUB_ENV"
+
+      - name: Deploy ECS service
+        run: |
+          aws ecs update-service \
+            --cluster medical-prod-cluster \
+            --service medical-prod-service \
+            --task-definition "$NEW_TASK"
+
+          aws ecs wait services-stable \
+            --cluster medical-prod-cluster \
+            --services medical-prod-service

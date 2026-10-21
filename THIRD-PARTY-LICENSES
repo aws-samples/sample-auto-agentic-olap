@@ -1,0 +1,74 @@
+# Third-Party Licenses
+
+This sample depends on the open-source packages listed below. Each is distributed under its own license;
+consult each project for the full license text. This file is informational and is not a substitute for the
+dependency manifests (`medical-olap-dbt/requirements.txt`, `medical-data-service/backend/pyproject.toml`,
+`medical-data-service/frontend/package.json`) or their lock files.
+
+## Python - data warehouse (medical-olap-dbt)
+
+| Package | License |
+| --- | --- |
+| dbt-core | Apache-2.0 |
+| dbt-redshift | Apache-2.0 |
+| metricflow (git commit afab9635481dd3e32a9f1895f37ca83bde08a920) | Apache-2.0 (LICENSE file at that commit) |
+| awscli (installed in the dbt runner image) | Apache-2.0 |
+| uv (installed in the dbt runner image) | MIT OR Apache-2.0 |
+
+## Python - data service backend (medical-data-service/backend)
+
+| Package | License |
+| --- | --- |
+| fastapi | MIT |
+| uvicorn | BSD-3-Clause |
+| pydantic-settings | MIT |
+| boto3 | Apache-2.0 |
+| PyJWT | MIT |
+| mcp | MIT |
+| metricflow (git commit afab9635481dd3e32a9f1895f37ca83bde08a920) | Apache-2.0 |
+| uv (installed in the image) | MIT OR Apache-2.0 |
+| pytest (dev) | MIT |
+| httpx (dev) | BSD-3-Clause |
+| ruff (dev) | MIT |
+
+## Python - metric-author skill (skills/metric-author, installed on demand via `uv run --with`)
+
+| Package | License |
+| --- | --- |
+| pyyaml | MIT |
+| duckdb | MIT |
+| sqlglot | MIT |
+| jinja2 | BSD-3-Clause |
+| ruamel.yaml | MIT |
+
+## JavaScript - front-end (medical-data-service/frontend)
+
+| Package | License |
+| --- | --- |
+| vue | MIT |
+| @vueuse/core | MIT |
+| reka-ui | MIT |
+| lucide-vue-next | ISC |
+| class-variance-authority | Apache-2.0 |
+| clsx | MIT |
+| tailwind-merge | MIT |
+| tw-animate-css | MIT |
+| tailwindcss | MIT |
+| @tailwindcss/vite | MIT |
+| @vitejs/plugin-vue | MIT |
+| vite | MIT |
+| typescript | Apache-2.0 |
+| vue-tsc | MIT |
+
+## Tools referenced in the documentation (not bundled)
+
+| Package | License |
+| --- | --- |
+| mcp-remote (run via `npx` to bridge MCP OAuth) | MIT |
+
+## Container base images
+
+| Image | Notes |
+| --- | --- |
+| node:20-slim | Docker Official Image; Node.js is MIT, the Debian base contains packages under their own licenses |
+| python:3.13-slim | Docker Official Image; Python is PSF-2.0, the Debian base contains packages under their own licenses |

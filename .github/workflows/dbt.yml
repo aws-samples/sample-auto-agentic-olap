@@ -1,0 +1,64 @@
+name: dbt
+
+permissions:
+  contents: read
+
+# Redshift is private (publicly_accessible = false). Run this on a self-hosted
+# runner inside the VPC and set REDSHIFT_HOST; a GitHub-hosted runner cannot
+# reach the workgroup.
+on:
+  push:
+    paths: ["medical-olap-dbt/**", ".github/workflows/dbt.yml"]
+  pull_request:
+    paths: ["medical-olap-dbt/**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: medical-olap-dbt
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+
+      - name: Install dependencies
+        run: |
+          uv venv --python 3.13 .venv
+          uv pip install --python .venv/bin/python -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ secrets.DBT_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Resolve Redshift credentials
+        run: |
+          SECRET=$(aws secretsmanager get-secret-value --secret-id "$REDSHIFT_SECRET_ARN" --query SecretString --output text)
+          echo "REDSHIFT_USER=$(echo "$SECRET" | python -c 'import json,sys;print(json.load(sys.stdin)["username"])')" >> "$GITHUB_ENV"
+          echo "::add-mask::$(echo "$SECRET" | python -c 'import json,sys;print(json.load(sys.stdin)["password"])')"
+          echo "REDSHIFT_PASSWORD=$(echo "$SECRET" | python -c 'import json,sys;print(json.load(sys.stdin)["password"])')" >> "$GITHUB_ENV"
+        env:
+          REDSHIFT_SECRET_ARN: ${{ secrets.REDSHIFT_SECRET_ARN }}
+
+      - name: dbt build (quality gate)
+        run: |
+          cp profiles.yml.example ~/.dbt/profiles.yml || (mkdir -p ~/.dbt && cp profiles.yml.example ~/.dbt/profiles.yml)
+          .venv/bin/dbt deps || true
+          .venv/bin/dbt seed
+          .venv/bin/dbt run
+          .venv/bin/dbt test
+
+      - name: Check MCP service against the new manifest
+        run: |
+          uv pip install --python .venv/bin/python -e '../medical-data-service/backend[dev]'
+          cd ../medical-data-service/backend
+          METRICFLOW_MANIFEST_PATH=../../medical-olap-dbt/target/semantic_manifest.json \
+            ../../medical-olap-dbt/.venv/bin/python -m pytest -q tests/test_mcp.py
