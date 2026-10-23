@@ -20,11 +20,9 @@ acm_certificate_arn = "arn:aws:acm:us-east-1:<ACCOUNT_ID>:certificate/<CERT_ID>"
 service_image    = "<ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/medical-data-service:<TAG>"
 dbt_runner_image = "<ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/medical-dbt-runner:<TAG>"
 
-# MCP access control (the Cognito user pool and client must be created beforehand; see docs/mcp-oauth.md)
-mcp_oauth_enabled        = true
+# Cognito (create the user pool and both app clients first; see medical-data-service/docs/mcp-oauth.md).
+# The ALB validates tokens from this pool; all four values are required.
 cognito_user_pool_id     = "<REGION>_<POOL_ID>"
 cognito_client_id        = "<COGNITO_APP_CLIENT_ID>"
 cognito_agent_client_id  = "<COGNITO_AGENT_CLIENT_ID>"
 cognito_domain           = "<PREFIX>.auth.us-east-1.amazoncognito.com"
-admin_email              = "you@example.com"
-mcp_api_keys_secret_name = "medical/dev/mcp-api-keys"

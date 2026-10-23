@@ -79,9 +79,9 @@ npm run dev        # http://localhost:5173, /api proxied to :8000
 To also serve the API locally, in another terminal run the backend. To actually
 execute queries it needs the Redshift environment variables (see Path B); set
 `QUERY_EXECUTION_ENABLED=false` to preview SQL only. The portal login also needs
-`COGNITO_ISSUER`, `COGNITO_CLIENT_ID` and `COGNITO_DOMAIN`, and API-key mode on
-`/mcp` needs AWS credentials to read the key secret (see
-[medical-data-service/README.md](medical-data-service/README.md#running-locally)):
+`COGNITO_ISSUER`, `COGNITO_CLIENT_ID` and `COGNITO_DOMAIN`. Run locally, the
+service has no authentication (on AWS the ALB does it), so keep it on localhost
+(see [medical-data-service/README.md](medical-data-service/README.md#running-locally)):
 
 ```bash
 cd ../backend
@@ -167,11 +167,8 @@ aws ecs describe-tasks --cluster medical-dev-cluster --tasks "$TASK" \
 ### B5. Connect an agent to the MCP endpoint
 
 The service is now at `https://<app_domain>/`, with the MCP endpoint at
-`https://<app_domain>/mcp`. With the default `mcp_oauth_enabled = true`, connect
-using the `mcp-remote` configuration in
+`https://<app_domain>/mcp`. Connect using the `mcp-remote` configuration in
 [medical-data-service/docs/mcp-oauth.md](medical-data-service/docs/mcp-oauth.md#amazon-q--claude-integration).
-Only if you set `mcp_oauth_enabled = false`, use the API-key configuration in
-[medical-data-service/README.md](medical-data-service/README.md#connecting-mcp-to-a-local-agent).
 
 ---
 

@@ -33,7 +33,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export type PublicConfig = {
   cognito_domain: string | null
   cognito_client_id: string | null
-  mcp_auth_mode: 'oauth' | 'api_key'
   mcp_agent_client_id: string | null
   mcp_resource_url: string | null
 }
@@ -121,7 +120,6 @@ export function currentEmail(): string | null {
 
 export type ServerInfo = {
   name: string
-  is_admin: boolean
   mcp_path: string
   transport: string
   execution_enabled: boolean
@@ -136,16 +134,6 @@ export type QueryResult = {
   rows?: Record<string, unknown>[]
   row_count?: number
 }
-export type ApiKey = {
-  id: string
-  name: string
-  masked_key: string
-  created_at: string
-  created_by: string
-  revoked_at: string | null
-  active: boolean
-}
-
 export const getInfo = () => request<ServerInfo>('/api/info')
 export const getCatalog = () =>
   request<{ metrics: CatalogItem[]; dimensions: CatalogItem[] }>('/api/metrics')
@@ -159,12 +147,3 @@ export const runQuery = (metrics: string[], group_by: string[], limit = 100) =>
     method: 'POST',
     body: JSON.stringify({ metrics, group_by, limit }),
   })
-
-export const listKeys = () => request<ApiKey[]>('/api/admin/keys')
-export const createKey = (name: string) =>
-  request<ApiKey & { api_key: string }>('/api/admin/keys', {
-    method: 'POST',
-    body: JSON.stringify({ name }),
-  })
-export const revokeKey = (id: string) =>
-  request<{ revoked: string }>(`/api/admin/keys/${id}`, { method: 'DELETE' })

@@ -61,20 +61,6 @@ data "aws_iam_policy_document" "task" {
     resources = [aws_redshiftserverless_namespace.main.admin_password_secret_arn]
   }
   statement {
-    sid = "McpApiKeysSecret"
-    actions = [
-      "secretsmanager:GetSecretValue",
-      "secretsmanager:PutSecretValue",
-      "secretsmanager:DescribeSecret",
-    ]
-    resources = ["arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.mcp_api_keys_secret_name}-*"]
-  }
-  statement {
-    sid       = "CognitoResolveEmail"
-    actions   = ["cognito-idp:AdminGetUser"]
-    resources = ["arn:aws:cognito-idp:${var.region}:${data.aws_caller_identity.current.account_id}:userpool/${var.cognito_user_pool_id}"]
-  }
-  statement {
     sid     = "Logs"
     actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = [

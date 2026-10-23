@@ -37,16 +37,14 @@ resource "aws_ecs_task_definition" "service" {
         # minutes; keep this above that so the first run of a new query shape
         # is not cancelled prematurely. Must be <= ALB idle timeout.
         { name = "REDSHIFT_QUERY_TIMEOUT", value = tostring(var.redshift_query_timeout) },
-        # Portal login (Cognito) + MCP OAuth. The pool/clients are created
-        # out-of-band and passed in as ids.
-        { name = "MCP_OAUTH_ENABLED", value = tostring(var.mcp_oauth_enabled) },
+        # Discovery data only: the portal reads the hosted-UI settings and
+        # the MCP metadata endpoint names the issuer. The ALB, not the app,
+        # validates tokens.
         { name = "MCP_RESOURCE_URL", value = "https://${var.app_domain}/mcp" },
         { name = "COGNITO_ISSUER", value = "https://cognito-idp.${var.region}.amazonaws.com/${var.cognito_user_pool_id}" },
         { name = "COGNITO_CLIENT_ID", value = var.cognito_client_id },
         { name = "MCP_AGENT_CLIENT_ID", value = var.cognito_agent_client_id },
         { name = "COGNITO_DOMAIN", value = var.cognito_domain },
-        { name = "ADMIN_EMAIL", value = var.admin_email },
-        { name = "MCP_API_KEYS_SECRET", value = var.mcp_api_keys_secret_name },
       ]
       logConfiguration = {
         logDriver = "awslogs"

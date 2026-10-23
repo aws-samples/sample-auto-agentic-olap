@@ -2,7 +2,8 @@
 
 Exposed over Streamable HTTP so a local agent (Amazon Q, Claude Desktop, ...)
 can connect to it as a remote MCP host and answer questions in natural
-language. Authentication is configured by the surrounding FastAPI application.
+language. The application implements no authentication: the load balancer in
+front of it validates the caller's token (see infra/terraform/alb.tf).
 
 Tools (all go through the dbt / MetricFlow semantic layer):
   - list_metrics       what can be measured
@@ -14,23 +15,16 @@ Tools (all go through the dbt / MetricFlow semantic layer):
 from __future__ import annotations
 
 import logging
-import os
 from contextlib import suppress
 from typing import Any
 
-from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
-from pydantic import AnyHttpUrl
 
-from app.identity import current_caller
-from app.mcp_auth import CognitoTokenVerifier, caller_from_access_token
 from app.redshift.client import RedshiftTimeout
 from app.service import data_service, execution_enabled
 
-logger = logging.getLogger("mcp.caller")
-
-OAUTH_ENABLED = os.getenv("MCP_OAUTH_ENABLED", "false").lower() == "true"
+logger = logging.getLogger("mcp.query")
 
 _common: dict[str, Any] = {
     "instructions": (
@@ -49,36 +43,11 @@ _common: dict[str, Any] = {
     ),
 }
 
-if OAUTH_ENABLED:
-    # OAuth Resource Server: agents present a Cognito access token (Bearer).
-    _issuer = AnyHttpUrl(os.environ["COGNITO_ISSUER"])
-    _resource = AnyHttpUrl(
-        os.environ["MCP_RESOURCE_URL"]
-    )  # e.g. https://your-app.example.com/mcp
-    mcp = FastMCP(
-        "medical-data-service",
-        token_verifier=CognitoTokenVerifier(),
-        auth=AuthSettings(
-            issuer_url=_issuer,
-            resource_server_url=_resource,
-            required_scopes=[],  # any valid Cognito access token from this pool
-        ),
-        **_common,
-    )
-else:
-    mcp = FastMCP("medical-data-service", **_common)
+# No auth here on purpose: the Application Load Balancer validates the Cognito
+# access token (jwt-validation listener rule) before a request can reach /mcp.
+mcp = FastMCP("medical-data-service", **_common)
 # Serve at the mount root so the public URL is a clean /mcp (see main.py).
 mcp.settings.streamable_http_path = "/"
-
-
-def _who() -> str:
-    """Identity of the caller: the Cognito token in OAuth mode, else the API key's creator."""
-    if OAUTH_ENABLED:
-        from mcp.server.auth.middleware.auth_context import get_access_token
-
-        return caller_from_access_token(get_access_token())
-    caller = current_caller()
-    return caller.email if caller else "anonymous"
 
 
 @mcp.tool()
@@ -140,17 +109,14 @@ def run_query(
 
     Returns the generated SQL plus {columns, rows, row_count}.
     """
-    who = _who()
-    logger.info("run_query by=%s metrics=%s group_by=%s", who, metrics, group_by)
+    logger.info("run_query metrics=%s group_by=%s", metrics, group_by)
     try:
         if not execution_enabled():
             return {
                 "error": "query execution is disabled (set QUERY_EXECUTION_ENABLED=true)",
-                "caller": who,
                 **data_service().generate_sql(metrics, group_by or [], limit),
             }
         return {
-            "caller": who,
             **data_service().run_query(metrics, group_by or [], limit),
         }
     except RedshiftTimeout as exc:
@@ -158,8 +124,7 @@ def run_query(
         # query compilation. Return a definitive result (with the SQL) so the
         # agent explains why and suggests a retry instead of looping.
         logger.info(
-            "run_query timeout by=%s stmt=%s elapsed=%.0fs",
-            who,
+            "run_query timeout stmt=%s elapsed=%.0fs",
             exc.statement_id,
             exc.elapsed,
         )
@@ -169,7 +134,6 @@ def run_query(
             " increase REDSHIFT_QUERY_TIMEOUT or keep the workgroup warm."
         )
         result: dict[str, Any] = {
-            "caller": who,
             "error": str(exc),
             "reason": "redshift_cold_start_timeout",
             "retryable": True,
@@ -191,9 +155,8 @@ def run_query(
                 " (e.g. pharma_budget_value, only on the budget/forecast table) is grouped by another dimension (e.g. pharma_package__bu_name)"
                 ". Use a dimension both support, or switch to another metric."
             )
-        logger.info("run_query failed by=%s error=%s", who, msg[:200])
+        logger.info("run_query failed error=%s", msg[:200])
         return {
-            "caller": who,
             "error": msg[:500],
             "hint": hint,
             "retryable": False,
