@@ -551,7 +551,6 @@ dependencies = [
     { name = "mcp" },
     { name = "metricflow" },
     { name = "pydantic-settings" },
-    { name = "pyjwt", extra = ["crypto"] },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -570,7 +569,6 @@ requires-dist = [
     { name = "mcp", specifier = ">=1.9,<2" },
     { name = "metricflow", git = "https://github.com/dbt-labs/metricflow.git?rev=afab9635481dd3e32a9f1895f37ca83bde08a920" },
     { name = "pydantic-settings", specifier = ">=2.7" },
-    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34" },

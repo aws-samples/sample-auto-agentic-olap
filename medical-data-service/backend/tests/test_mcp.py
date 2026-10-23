@@ -22,23 +22,36 @@ def test_generate_sql_hits_the_atomic_fact() -> None:
     assert "pharma_sales_detail" in result["sql"]
 
 
-# No lifespan context manager: these requests short-circuit at the middleware
-# or the auth dependency, so the one-shot MCP session manager must not be
-# started (running it twice across tests raises).
+# No lifespan context manager: none of these requests reach the MCP app, so
+# the one-shot MCP session manager must not be started (running it twice
+# across tests raises).
 _client = TestClient(app)
 
 
-def test_config_is_public_but_info_requires_auth() -> None:
-    # /api/config is public (SPA needs it before login)
+def test_config_is_served() -> None:
+    # /api/config is what the SPA reads before login; the ALB leaves it open.
     assert _client.get("/api/config").status_code == 200
-    # /api/info now requires a Cognito token
-    assert _client.get("/api/info").status_code == 401
 
 
-def test_mcp_requires_api_key() -> None:
-    # No API key -> rejected before reaching the MCP app
-    assert _client.get("/mcp").status_code == 401
-    assert _client.post("/mcp", headers={"X-API-Key": "bogus"}).status_code == 401
+def test_api_key_management_is_gone() -> None:
+    for method in ("get", "post"):
+        assert getattr(_client, method)("/api/admin/keys").status_code in (404, 405)
+
+
+def test_openapi_docs_are_disabled() -> None:
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert _client.get(path).status_code == 404
+
+
+def test_protected_resource_metadata_points_at_cognito(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    issuer = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example"
+    monkeypatch.setenv("COGNITO_ISSUER", issuer)
+    monkeypatch.setenv("MCP_RESOURCE_URL", "https://example.com/mcp")
+    body = _client.get("/.well-known/oauth-protected-resource/mcp").json()
+    assert body["authorization_servers"] == [issuer]
+    assert body["resource"] == "https://example.com/mcp"
 
 
 def test_public_catalogue_is_pharma_only() -> None:
@@ -71,7 +84,6 @@ def test_run_query_returns_sql_when_execution_disabled(
 ) -> None:
     from app.mcp import server
 
-    monkeypatch.setattr(server, "OAUTH_ENABLED", False)
     monkeypatch.setattr(server, "execution_enabled", lambda: False)
 
     result = server.run_query(["pharma_sales_value"], ["pharma_brand"])
@@ -85,7 +97,6 @@ def test_run_query_explains_missing_join_path(
 ) -> None:
     from app.mcp import server
 
-    monkeypatch.setattr(server, "OAUTH_ENABLED", False)
     monkeypatch.setattr(server, "execution_enabled", lambda: True)
 
     result = server.run_query(["pharma_budget_value"], ["pharma_package__bu_name"])

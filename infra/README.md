@@ -21,10 +21,22 @@ AWS deployment (this dir)   ECS + ALB + Redshift storage, single-domain HTTPS
 The business logic (dbt models, semantic layer, MCP service, Vue front-end) is
 identical on both sides. Only the networking and deployment differ.
 
-The portal and `/api/*` require a Cognito login. `/mcp` requires a Cognito OAuth
-access token issued to the agent app client (`mcp_oauth_enabled = true`, the
-default) or an API key (`false`). There is no row- or column-level data
-permission: any authenticated caller sees every metric.
+Authentication is done by the ALB, not by the application. Listener rules in
+`alb.tf` use the ALB's managed `jwt-validation` action:
+
+- `/api/*` requires a Cognito ID token issued to the portal app client
+  (`token_use = id`, `aud = cognito_client_id`). `/api/config` is the one
+  exception: it returns the public hosted-UI settings the portal needs before
+  login.
+- `/mcp` and `/mcp/*` require a Cognito access token issued to the agent app
+  client (`token_use = access`, `client_id = cognito_agent_client_id`).
+- The ALB checks the RS256 signature against the user pool's JWKS and enforces
+  `iss` and `exp`. A request that fails is rejected at the ALB and never reaches
+  the service, and the service security group accepts traffic from the ALB only.
+
+The application has no token verification, API keys or admin role of its own.
+There is no row- or column-level data permission: any authenticated caller sees
+every metric.
 
 ## What it creates
 
@@ -36,7 +48,7 @@ Security groups        ALB -> service -> Redshift ingress chain (egress from ALB
 Redshift Serverless    private, publicly_accessible = false
 Redshift usage limit   monthly, auto-suspends when exceeded
 ECS Fargate            cluster + service, one image serving the Vue front-end, REST API and MCP
-ALB                    HTTPS ingress (443); port 80 does only a 301 redirect
+ALB                    HTTPS ingress (443) with jwt-validation rules on /api and /mcp; port 80 does only a 301 redirect
 Route 53               A / AAAA alias records for app_domain (the ALB is IPv4-only, so the AAAA record returns no address until the ALB is made dual-stack)
 IAM roles              task role + execution role (see below; the dbt task reuses the task role)
 ```
@@ -51,9 +63,6 @@ redshift-data:DescribeStatement / GetStatementResult / CancelStatement
                                                limited to statements this role submitted
                                                (redshift-data:statement-owner-iam-userid)
 secretsmanager:GetSecretValue                  the Redshift admin secret
-secretsmanager:GetSecretValue / PutSecretValue / DescribeSecret
-                                               the MCP API-key secret
-cognito-idp:AdminGetUser                       the user pool (resolve caller email)
 logs:CreateLogStream / PutLogEvents            the service and dbt log groups
 ```
 
@@ -150,7 +159,7 @@ changing once these are filled.**
 | File | What to fill | When |
 |---|---|---|
 | `environments/dev.s3.tfbackend`<br>`environments/prod.s3.tfbackend` | `bucket` | after bootstrap, before the first `init` |
-| `environments/dev.tfvars`<br>`environments/prod.tfvars` | `app_domain`<br>`route53_zone_name`<br>`acm_certificate_arn`<br>`service_image`<br>`dbt_runner_image`<br>`mcp_oauth_enabled`<br>`cognito_user_pool_id`<br>`cognito_client_id`<br>`cognito_agent_client_id`<br>`cognito_domain`<br>`admin_email`<br>`mcp_api_keys_secret_name` | before the first `plan` |
+| `environments/dev.tfvars`<br>`environments/prod.tfvars` | `app_domain`<br>`route53_zone_name`<br>`acm_certificate_arn`<br>`service_image`<br>`dbt_runner_image`<br>`cognito_user_pool_id`<br>`cognito_client_id`<br>`cognito_agent_client_id`<br>`cognito_domain` | before the first `plan` |
 
 The values come from different places:
 
@@ -402,9 +411,9 @@ The same code, with behavior decided by environment variables:
 | `QUERY_EXECUTION_ENABLED` | `true` | `true` | whether to actually execute queries |
 | `REDSHIFT_SECRET_ARN` etc. | manual export | injected by Terraform | Redshift connection info |
 
-Authentication (Cognito login for the portal and `/api/*`, OAuth or API key for
-`/mcp`) is configured through the `cognito_*` and `mcp_*` variables; see
-[Two run forms](#two-run-forms).
+Authentication (ALB token validation for `/api/*` and `/mcp`) is configured
+through the `cognito_*` variables; see the top of this page. Run locally, the
+service has no authentication at all, so keep it bound to localhost.
 
 ## CI/CD
 

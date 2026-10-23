@@ -154,21 +154,7 @@ run_query          query Redshift using semantic-layer metrics; returns the SQL 
 Results include the MetricFlow-generated `sql`, so you can verify how each number
 is computed.
 
-Integration example (Streamable HTTP, API-key mode, i.e. `MCP_OAUTH_ENABLED=false`):
-
-```json
-{
-  "mcpServers": {
-    "medical-data-service": {
-      "url": "https://<your-domain>/mcp",
-      "transport": "http",
-      "headers": { "X-API-Key": "mk_live_..." }
-    }
-  }
-}
-```
-
-For the default OAuth mode, use the `mcp-remote` configuration in
+To connect an agent, use the `mcp-remote` configuration in
 [medical-data-service/docs/mcp-oauth.md](medical-data-service/docs/mcp-oauth.md#amazon-q--claude-integration).
 
 Example questions:
@@ -179,7 +165,8 @@ Example questions:
 
 > What is the forecast-to-budget ratio by brand for YTD 2026?
 
-For authentication (Cognito OAuth or API Key), see
+Authentication is done by the ALB (`jwt-validation` on Cognito tokens), not by
+the application; see
 [medical-data-service/docs/mcp-oauth.md](medical-data-service/docs/mcp-oauth.md).
 
 ## Cost

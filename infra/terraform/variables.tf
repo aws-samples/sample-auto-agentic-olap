@@ -108,51 +108,46 @@ variable "enable_http_redirect" {
 }
 
 # ---------------------------------------------------------------------------
-# MCP access control (added to match the deployed dev environment).
-# The MCP endpoint is an OAuth resource server; the human portal uses Cognito.
-# The Cognito user pool + app clients were created out-of-band (not by this
-# stack), so they are passed in as ids rather than managed here.
+# Cognito. The ALB validates tokens from this user pool (alb.tf): ID tokens
+# from the portal client on /api, access tokens from the agent client on /mcp.
+# The pool and app clients are created out-of-band (see
+# medical-data-service/docs/mcp-oauth.md) and passed in as ids.
 # ---------------------------------------------------------------------------
-variable "mcp_oauth_enabled" {
-  type        = bool
-  description = "true = MCP endpoint requires a Cognito OAuth bearer token; false = API key"
-  default     = true
-}
 
 variable "cognito_user_pool_id" {
   type        = string
   description = "Existing Cognito user pool id (portal login + MCP OAuth)"
-  default     = ""
+  validation {
+    condition     = length(var.cognito_user_pool_id) > 0
+    error_message = "Required: the ALB cannot validate tokens without it."
+  }
 }
 
 variable "cognito_client_id" {
   type        = string
   description = "Cognito app client id for the portal (Authorization Code + PKCE)"
-  default     = ""
+  validation {
+    condition     = length(var.cognito_client_id) > 0
+    error_message = "Required: the ALB cannot validate tokens without it."
+  }
 }
 
 variable "cognito_agent_client_id" {
   type        = string
   description = "Cognito public app client id agents use for MCP OAuth (no DCR)"
-  default     = ""
+  validation {
+    condition     = length(var.cognito_agent_client_id) > 0
+    error_message = "Required: the ALB cannot validate tokens without it."
+  }
 }
 
 variable "cognito_domain" {
   type        = string
   description = "Cognito hosted-UI domain, e.g. <prefix>.auth.<region>.amazoncognito.com"
-  default     = ""
-}
-
-variable "admin_email" {
-  type        = string
-  description = "Only this Cognito user may create/revoke API keys"
-  default     = ""
-}
-
-variable "mcp_api_keys_secret_name" {
-  type        = string
-  description = "Secrets Manager secret name holding the MCP API keys (API-key mode)"
-  default     = "medical/dev/mcp-api-keys"
+  validation {
+    condition     = length(var.cognito_domain) > 0
+    error_message = "Required: the ALB cannot validate tokens without it."
+  }
 }
 
 variable "redshift_query_timeout" {

@@ -46,6 +46,110 @@ resource "aws_lb_listener" "https" {
   }
 }
 
+// Authentication happens here, not in the application. The rules below send
+// /mcp and /api through the ALB's managed jwt-validation action: the token's
+// RS256 signature is checked against the Cognito JWKS, `iss` and `exp` are
+// enforced, and the extra claims bind the token to the right app client.
+// Anything that fails is rejected by the ALB and never reaches the service.
+//
+// The default action above still forwards everything else: the static portal,
+// /health, and the OAuth discovery document under /.well-known/. None of
+// those return data.
+locals {
+  cognito_issuer = "https://cognito-idp.${var.region}.amazonaws.com/${var.cognito_user_pool_id}"
+  cognito_jwks   = "${local.cognito_issuer}/.well-known/jwks.json"
+}
+
+// The portal reads its Cognito hosted-UI settings before the user has logged
+// in, so this one /api path stays open. It returns public client ids only.
+resource "aws_lb_listener_rule" "api_config" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 10
+
+  condition {
+    path_pattern {
+      values = ["/api/config"]
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.service.arn
+  }
+}
+
+// Portal REST API: requires a Cognito ID token issued to the portal client.
+resource "aws_lb_listener_rule" "api" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 20
+
+  condition {
+    path_pattern {
+      values = ["/api/*"]
+    }
+  }
+
+  action {
+    type = "jwt-validation"
+    jwt_validation {
+      issuer        = local.cognito_issuer
+      jwks_endpoint = local.cognito_jwks
+      additional_claim {
+        name   = "token_use"
+        format = "single-string"
+        values = ["id"]
+      }
+      additional_claim {
+        name   = "aud"
+        format = "single-string"
+        values = [var.cognito_client_id]
+      }
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.service.arn
+  }
+}
+
+// MCP endpoint: requires a Cognito access token issued to the agent client.
+// Cognito access tokens carry no `aud`; `client_id` is what binds them to
+// this resource.
+resource "aws_lb_listener_rule" "mcp" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 30
+
+  condition {
+    path_pattern {
+      values = ["/mcp", "/mcp/*"]
+    }
+  }
+
+  action {
+    type = "jwt-validation"
+    jwt_validation {
+      issuer        = local.cognito_issuer
+      jwks_endpoint = local.cognito_jwks
+      additional_claim {
+        name   = "token_use"
+        format = "single-string"
+        values = ["access"]
+      }
+      additional_claim {
+        name   = "client_id"
+        format = "single-string"
+        values = [var.cognito_agent_client_id]
+      }
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.service.arn
+  }
+}
+
 // Port 80 answers with a redirect and nothing else. Without it, anyone typing
 // the hostname without a scheme gets a connection error rather than the app.
 // Set enable_http_redirect = false to close port 80 entirely.

@@ -7,7 +7,6 @@ dependencies = [
   "uvicorn[standard]>=0.34",
   "pydantic-settings>=2.7",
   "boto3>=1.36",
-  "PyJWT[crypto]>=2.10",
   "mcp>=1.9,<2",
   "metricflow @ git+https://github.com/dbt-labs/metricflow.git@afab9635481dd3e32a9f1895f37ca83bde08a920",
 ]

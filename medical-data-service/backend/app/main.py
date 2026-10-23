@@ -1,9 +1,12 @@
 """Medical sales data service.
 
-- Remote MCP server (Streamable HTTP at /mcp) — guarded by a Cognito OAuth
-  access token (MCP_OAUTH_ENABLED=true) or an API key (false).
-- REST surface for the Vue portal — guarded by Cognito login.
-- API key management (/api/admin/keys) — restricted to ADMIN_EMAIL.
+- Remote MCP server (Streamable HTTP at /mcp).
+- REST surface for the Vue portal (/api).
+
+This application implements no authentication or authorization. The
+Application Load Balancer validates Cognito tokens before a request reaches
+/mcp or /api (jwt-validation listener rules in infra/terraform/alb.tf), and
+the service security group accepts traffic from the load balancer only.
 
 No data-level permissions (no RLS/DDM): once past the door, all metrics are
 visible.
@@ -15,69 +18,15 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from app.apikeys import api_key_store
-from app.auth import User, is_admin, require_admin, require_user
-from app.identity import Caller, reset_caller, set_caller
-from app.mcp.server import OAUTH_ENABLED, mcp
+from app.mcp.server import mcp
 from app.service import data_service, execution_enabled
 
 _mcp_app = mcp.streamable_http_app()
-
-
-class ApiKeyGuard:
-    """Pure-ASGI guard for the MCP mount.
-
-    Resolves the API key to its owning Cognito identity and stashes it in a
-    contextvar for the duration of the request. Runs inline (same async task)
-    so the contextvar propagates into the MCP tool functions — a FastAPI
-    BaseHTTPMiddleware would hop tasks and lose it.
-    """
-
-    def __init__(self, app):
-        self.app = app
-
-    async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
-        headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
-        key = headers.get("x-api-key", "")
-        if not key:
-            auth = headers.get("authorization", "")
-            if auth.startswith("Bearer "):
-                key = auth.removeprefix("Bearer ").strip()
-        record = api_key_store().resolve(key)
-        if record is None:
-            await send(
-                {
-                    "type": "http.response.start",
-                    "status": 401,
-                    "headers": [(b"content-type", b"application/json")],
-                }
-            )
-            await send(
-                {
-                    "type": "http.response.body",
-                    "body": b'{"detail":"invalid or missing API key"}',
-                }
-            )
-            return
-        token = set_caller(
-            Caller(
-                email=record.get("created_by", "unknown"),
-                key_id=record.get("id", ""),
-                key_name=record.get("name", ""),
-            )
-        )
-        try:
-            await self.app(scope, receive, send)
-        finally:
-            reset_caller(token)
 
 
 @asynccontextmanager
@@ -86,7 +35,16 @@ async def lifespan(app: FastAPI):
         yield
 
 
-app = FastAPI(title="Medical Data Service (MCP)", version="1.0.0", lifespan=lifespan)
+# No interactive docs: the OpenAPI page would be the one unauthenticated
+# description of the API surface.
+app = FastAPI(
+    title="Medical Data Service (MCP)",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 
 # The MCP endpoint lives at /mcp/ (the mounted app's route). A client that hits
@@ -100,14 +58,7 @@ def _mcp_trailing_slash() -> RedirectResponse:
 
 
 # Remote MCP endpoint: connect a local agent to https://<host>/mcp
-# - OAuth mode: FastMCP's own RequireAuthMiddleware validates Cognito tokens,
-#   so mount the app directly.
-# - API-key mode: wrap with the ApiKeyGuard which also carries the key owner's
-#   identity into the tools.
-if OAUTH_ENABLED:
-    app.mount("/mcp", _mcp_app)
-else:
-    app.mount("/mcp", ApiKeyGuard(_mcp_app))
+app.mount("/mcp", _mcp_app)
 
 
 @app.get("/health")
@@ -115,19 +66,18 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-if OAUTH_ENABLED:
-    # RFC 9728 Protected Resource Metadata. FastMCP registers this inside the
-    # /mcp sub-app, but the spec (and our WWW-Authenticate header) points to the
-    # ROOT path, so we serve it here to avoid the mount mismatch.
-    @app.get("/.well-known/oauth-protected-resource/mcp")
-    @app.get("/.well-known/oauth-protected-resource")
-    def protected_resource_metadata() -> dict:
-        return {
-            "resource": os.environ["MCP_RESOURCE_URL"],
-            "authorization_servers": [os.environ["COGNITO_ISSUER"]],
-            "scopes_supported": [],
-            "bearer_methods_supported": ["header"],
-        }
+# RFC 9728 Protected Resource Metadata: tells an MCP client which
+# authorization server issues tokens for /mcp. It is discovery data, not an
+# auth check; the load balancer enforces the token.
+@app.get("/.well-known/oauth-protected-resource/mcp")
+@app.get("/.well-known/oauth-protected-resource")
+def protected_resource_metadata() -> dict:
+    return {
+        "resource": os.environ["MCP_RESOURCE_URL"],
+        "authorization_servers": [os.environ["COGNITO_ISSUER"]],
+        "scopes_supported": [],
+        "bearer_methods_supported": ["header"],
+    }
 
 
 @app.get("/api/config")
@@ -136,21 +86,15 @@ def public_config() -> dict:
     return {
         "cognito_domain": os.getenv("COGNITO_DOMAIN"),
         "cognito_client_id": os.getenv("COGNITO_CLIENT_ID"),
-        # How the MCP endpoint is protected, so the portal shows the right
-        # connection instructions.
-        "mcp_auth_mode": "oauth" if OAUTH_ENABLED else "api_key",
         "mcp_agent_client_id": os.getenv("MCP_AGENT_CLIENT_ID"),
         "mcp_resource_url": os.getenv("MCP_RESOURCE_URL"),
     }
 
 
 @app.get("/api/info")
-def info(user: User = Depends(require_user)) -> dict:
+def info() -> dict:
     return {
         "name": "medical-data-service",
-        # Lets the portal decide whether to show API-key management; the
-        # admin endpoints still enforce this server-side.
-        "is_admin": is_admin(user),
         "mcp_path": "/mcp",
         "transport": "streamable-http",
         "execution_enabled": execution_enabled(),
@@ -170,7 +114,7 @@ def info(user: User = Depends(require_user)) -> dict:
 
 
 @app.get("/api/metrics")
-def api_metrics(_: User = Depends(require_user)) -> dict:
+def api_metrics() -> dict:
     return {
         "metrics": data_service().list_metrics(),
         "dimensions": data_service().list_dimensions(),
@@ -184,7 +128,7 @@ class QueryRequest(BaseModel):
 
 
 @app.post("/api/query/preview")
-def api_preview(request: QueryRequest, _: User = Depends(require_user)) -> dict:
+def api_preview(request: QueryRequest) -> dict:
     try:
         return data_service().generate_sql(
             request.metrics, request.group_by, request.limit
@@ -194,7 +138,7 @@ def api_preview(request: QueryRequest, _: User = Depends(require_user)) -> dict:
 
 
 @app.post("/api/query")
-def api_query(request: QueryRequest, _: User = Depends(require_user)) -> dict:
+def api_query(request: QueryRequest) -> dict:
     if not execution_enabled():
         raise HTTPException(status_code=503, detail="query execution is disabled")
     try:
@@ -203,30 +147,6 @@ def api_query(request: QueryRequest, _: User = Depends(require_user)) -> dict:
         )
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-
-# ---------------------------------------------------------------------------
-# API key management — restricted to ADMIN_EMAIL.
-# ---------------------------------------------------------------------------
-class CreateKeyRequest(BaseModel):
-    name: str = ""
-
-
-@app.get("/api/admin/keys")
-def list_keys(admin: User = Depends(require_admin)) -> list[dict]:
-    return api_key_store().list()
-
-
-@app.post("/api/admin/keys")
-def create_key(request: CreateKeyRequest, admin: User = Depends(require_admin)) -> dict:
-    return api_key_store().create(request.name, admin.email)
-
-
-@app.delete("/api/admin/keys/{key_id}")
-def revoke_key(key_id: str, admin: User = Depends(require_admin)) -> dict:
-    if not api_key_store().revoke(key_id):
-        raise HTTPException(status_code=404, detail="key not found or already revoked")
-    return {"revoked": key_id}
 
 
 # ---------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import {
-  Activity, Database, Plug, TerminalSquare, Play, Loader2, Copy, Check, KeyRound,
-  LogOut, Trash2, ShieldCheck,
+  Activity, Database, Plug, TerminalSquare, Play, Loader2, Copy, Check,
+  LogOut, ShieldCheck,
 } from 'lucide-vue-next'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,8 +12,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import {
   fetchConfig, beginLogin, completeLogin, logout, getToken, setToken, currentEmail,
-  getInfo, getCatalog, previewSql, runQuery, listKeys, createKey, revokeKey,
-  type PublicConfig, type ServerInfo, type CatalogItem, type QueryResult, type ApiKey,
+  getInfo, getCatalog, previewSql, runQuery,
+  type PublicConfig, type ServerInfo, type CatalogItem, type QueryResult,
 } from '@/api'
 
 // -- auth bootstrap ----------------------------------------------------------
@@ -21,9 +21,6 @@ const ready = ref(false)
 const config = ref<PublicConfig>()
 const loggedIn = ref(false)
 const email = ref<string | null>(null)
-// Admin status comes from the authenticated /api/info call (the server still
-// enforces it on /api/admin/*); the admin email is never sent to the browser.
-const isAdmin = computed(() => !!info.value?.is_admin)
 
 onMounted(async () => {
   config.value = await fetchConfig()
@@ -62,7 +59,6 @@ async function loadAll() {
     const catalog = await getCatalog()
     metrics.value = catalog.metrics
     dimensions.value = catalog.dimensions
-    if (isAdmin.value) await loadKeys()
   } catch (e) {
     if (String(e).includes('unauthorized')) { loggedIn.value = false }
   }
@@ -71,34 +67,27 @@ async function loadAll() {
 // The endpoint lives at /mcp/ (trailing slash); without it a client hits the
 // SPA catch-all and gets 405 instead of the 401 that starts OAuth.
 const mcpUrl = computed(() => `${window.location.origin}${info.value?.mcp_path ?? '/mcp'}/`)
-const isOAuth = computed(() => config.value?.mcp_auth_mode === 'oauth')
 
-// OAuth mode: agents connect via mcp-remote with the pre-created public
-// client_id (Cognito has no DCR). API-key mode: X-API-Key header.
-const mcpConfig = computed(() => {
-  if (isOAuth.value) {
-    return JSON.stringify(
-      {
-        mcpServers: {
-          'medical-data-service': {
-            command: 'npx',
-            args: [
-              '-y', 'mcp-remote@0.15.2', mcpUrl.value, '3334',
-              // client-info (not client-metadata): supplies a pre-registered
-              // client_id and skips DCR, which Cognito does not support.
-              '--static-oauth-client-info',
-              JSON.stringify({ client_id: config.value?.mcp_agent_client_id ?? '', token_endpoint_auth_method: 'none' }),
-            ],
-          },
+// Agents connect via mcp-remote with the pre-created public client_id
+// (Cognito has no dynamic client registration).
+const mcpConfig = computed(() =>
+  JSON.stringify(
+    {
+      mcpServers: {
+        'medical-data-service': {
+          command: 'npx',
+          args: [
+            '-y', 'mcp-remote@0.15.2', mcpUrl.value, '3334',
+            // client-info (not client-metadata): supplies a pre-registered
+            // client_id and skips DCR, which Cognito does not support.
+            '--static-oauth-client-info',
+            JSON.stringify({ client_id: config.value?.mcp_agent_client_id ?? '', token_endpoint_auth_method: 'none' }),
+          ],
         },
-      }, null, 2,
-    )
-  }
-  return JSON.stringify(
-    { mcpServers: { 'medical-data-service': { url: mcpUrl.value, transport: 'http', headers: { 'X-API-Key': '<your API Key>' } } } },
-    null, 2,
-  )
-})
+      },
+    }, null, 2,
+  ),
+)
 
 const copied = ref('')
 async function copy(text: string, key: string) {
@@ -126,30 +115,6 @@ async function doRun() {
   catch (e) { runError.value = String(e) } finally { busy.value = false }
 }
 
-// -- API keys ----------------------------------------------------------------
-const keys = ref<ApiKey[]>([])
-const newKeyName = ref('')
-const createdKey = ref('')
-const keyBusy = ref(false)
-const keyError = ref('')
-
-async function loadKeys() {
-  try { keys.value = await listKeys() } catch (e) { keyError.value = String(e) }
-}
-async function doCreateKey() {
-  keyBusy.value = true; keyError.value = ''
-  try {
-    const r = await createKey(newKeyName.value)
-    createdKey.value = r.api_key
-    newKeyName.value = ''
-    await loadKeys()
-  } catch (e) { keyError.value = String(e) } finally { keyBusy.value = false }
-}
-async function doRevoke(id: string) {
-  keyBusy.value = true; keyError.value = ''
-  try { await revokeKey(id); await loadKeys() }
-  catch (e) { keyError.value = String(e) } finally { keyBusy.value = false }
-}
 </script>
 
 <template>
@@ -164,7 +129,7 @@ async function doRevoke(id: string) {
       <Card class="w-full max-w-md">
         <CardHeader>
           <CardTitle class="flex items-center gap-2"><Database class="size-5 text-primary" />Pharma Sales MCP Data Service</CardTitle>
-          <CardDescription>The admin page requires sign-in. Use your corporate Cognito account.</CardDescription>
+          <CardDescription>This page requires sign-in. Use your Cognito account.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button class="w-full" @click="doLogin"><ShieldCheck class="mr-1 size-4" />Sign in with Cognito</Button>
@@ -200,7 +165,6 @@ async function doRevoke(id: string) {
             <TabsTrigger value="connect"><Plug class="mr-1 size-4" />Connect MCP</TabsTrigger>
             <TabsTrigger value="catalog"><Database class="mr-1 size-4" />Metrics & dimensions</TabsTrigger>
             <TabsTrigger value="playground"><TerminalSquare class="mr-1 size-4" />Query playground</TabsTrigger>
-            <TabsTrigger v-if="isAdmin && !isOAuth" value="keys"><KeyRound class="mr-1 size-4" />API keys</TabsTrigger>
           </TabsList>
 
           <!-- Connect -->
@@ -209,7 +173,7 @@ async function doRevoke(id: string) {
               <Card>
                 <CardHeader>
                   <CardTitle>Remote MCP URL</CardTitle>
-                  <CardDescription>{{ isOAuth ? 'Point your local agent at this URL and sign in via Cognito OAuth' : 'Point your local agent at this URL and send an API Key in the request header' }}</CardDescription>
+                  <CardDescription>Point your local agent at this URL and sign in via Cognito OAuth</CardDescription>
                 </CardHeader>
                 <CardContent class="space-y-4">
                   <div class="flex items-center gap-2">
@@ -218,14 +182,14 @@ async function doRevoke(id: string) {
                       <Check v-if="copied === 'url'" class="size-4" /><Copy v-else class="size-4" />
                     </Button>
                   </div>
-                  <div class="text-sm text-muted-foreground">Transport: <Badge variant="outline">{{ info?.transport }}</Badge>　Auth: <Badge variant="outline">{{ isOAuth ? 'Cognito OAuth (each user signs in)' : 'API Key (X-API-Key header)' }}</Badge></div>
+                  <div class="text-sm text-muted-foreground">Transport: <Badge variant="outline">{{ info?.transport }}</Badge>　Auth: <Badge variant="outline">Cognito OAuth, validated by the load balancer</Badge></div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
                   <CardTitle>Amazon Q / Claude config</CardTitle>
-                  <CardDescription>{{ isOAuth ? 'Connecting pops up Cognito sign-in; after sign-in you fetch data as yourself' : 'Replace <your API Key> with a key created on the API keys page' }}</CardDescription>
+                  <CardDescription>Connecting pops up Cognito sign-in; after sign-in you fetch data as yourself</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div class="relative">
@@ -317,48 +281,6 @@ async function doRevoke(id: string) {
             </Card>
           </TabsContent>
 
-          <!-- API keys (admin only) -->
-          <TabsContent v-if="isAdmin" value="keys">
-            <Card>
-              <CardHeader>
-                <CardTitle>API key management</CardTitle>
-                <CardDescription>Access keys for the MCP endpoint. The plaintext is shown only once at creation; only the hash is stored afterward.</CardDescription>
-              </CardHeader>
-              <CardContent class="space-y-4">
-                <div class="flex gap-2">
-                  <Input v-model="newKeyName" placeholder="key name, e.g. my-laptop" class="max-w-xs" />
-                  <Button :disabled="keyBusy" @click="doCreateKey"><Loader2 v-if="keyBusy" class="mr-1 size-4 animate-spin" /><KeyRound v-else class="mr-1 size-4" />Create key</Button>
-                </div>
-
-                <div v-if="createdKey" class="rounded-md border border-emerald-600/40 bg-emerald-600/10 p-3">
-                  <p class="mb-2 text-sm font-medium text-emerald-500">New key created - copy and save it now (shown only once):</p>
-                  <div class="flex items-center gap-2">
-                    <code class="flex-1 break-all rounded bg-background px-3 py-2 text-sm">{{ createdKey }}</code>
-                    <Button size="icon" variant="outline" @click="copy(createdKey, 'newkey')"><Check v-if="copied === 'newkey'" class="size-4" /><Copy v-else class="size-4" /></Button>
-                    <Button size="sm" variant="ghost" @click="createdKey = ''">I've saved it</Button>
-                  </div>
-                </div>
-
-                <p v-if="keyError" class="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{{ keyError }}</p>
-
-                <Table>
-                  <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Key</TableHead><TableHead>Created</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    <TableRow v-for="k in keys" :key="k.id">
-                      <TableCell>{{ k.name }}</TableCell>
-                      <TableCell><code class="text-xs">{{ k.masked_key }}</code></TableCell>
-                      <TableCell class="text-muted-foreground">{{ new Date(k.created_at).toLocaleString() }}</TableCell>
-                      <TableCell><Badge :variant="k.active ? 'success' : 'secondary'">{{ k.active ? 'Active' : 'Revoked' }}</Badge></TableCell>
-                      <TableCell>
-                        <Button v-if="k.active" size="sm" variant="ghost" :disabled="keyBusy" @click="doRevoke(k.id)"><Trash2 class="mr-1 size-4" />Revoke</Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow v-if="!keys.length"><TableCell class="text-muted-foreground" colspan="5">No keys yet. Create one for the agent to use.</TableCell></TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </main>
     </template>

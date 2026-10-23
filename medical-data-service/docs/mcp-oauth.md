@@ -1,25 +1,38 @@
 # MCP OAuth integration
 
-The MCP endpoint (`https://your-app.example.com/mcp`) is an **OAuth 2.1 Resource
-Server**: an agent connecting must obtain an access token via **Cognito sign-in**.
-The server checks the token's RS256 signature against the pool's JWKS, its issuer,
-that it is an access token (`token_use=access`), and that it was issued to the
-agent app client (`client_id` == `MCP_AGENT_CLIENT_ID`; if that variable is unset,
-every token is rejected). It does not check audience or scopes. It then carries
-the **signed-in user's own identity** (email) into every call (logs + the `caller`
-field returned by `run_query`).
+An agent connecting to the MCP endpoint (`https://your-app.example.com/mcp`) must
+present a Cognito access token obtained through **Cognito sign-in**.
+
+The token is validated by the **Application Load Balancer**, not by this
+application. A `jwt-validation` listener rule on `/mcp` and `/mcp/*`
+(`infra/terraform/alb.tf`) checks:
+
+- the RS256 signature, against the user pool's JWKS
+- `iss` (the user pool) and `exp`
+- `token_use = access` (ID tokens are rejected)
+- `client_id` = the agent app client (`cognito_agent_client_id`)
+
+A request that fails any check is rejected by the ALB and never reaches the
+service. The portal's `/api/*` is protected the same way, with ID tokens from
+the portal app client. The application itself contains no token verification,
+API keys or admin role, and the service security group accepts traffic from the
+ALB only.
 
 ## Authentication flow (happens automatically)
 
 ```
-agent connects to /mcp
-  → 401 + WWW-Authenticate (points to /.well-known/oauth-protected-resource/mcp)
-  → agent reads the metadata and learns the authorization server = Cognito
+agent connects to /mcp without a token
+  → the ALB rejects it with 401
+  → agent reads /.well-known/oauth-protected-resource/mcp (served by the app,
+    left open by the ALB) and learns the authorization server = Cognito
   → agent reads Cognito's openid-configuration to get the authorize/token endpoints
   → pops up Cognito sign-in (Authorization Code + PKCE)
   → on success → gets an access token
-  → agent reconnects to /mcp with the Bearer token → passes, identity = the signed-in person
+  → agent reconnects to /mcp with the Bearer token → the ALB validates it and forwards
 ```
+
+The protected-resource metadata is discovery data only: it names the issuer and
+grants nothing.
 
 ## One prerequisite: Cognito does not support DCR
 
@@ -31,8 +44,8 @@ client_id: <AGENT_APP_CLIENT_ID>   (public client, PKCE, no secret)
 ```
 
 This client_id is not a password; it can be public and shared by all agents; the
-real identity comes from each person's own Cognito sign-in. The server accepts
-only tokens issued to this client. (It is also returned in `/api/config`.)
+real identity comes from each person's own Cognito sign-in. The ALB accepts only
+tokens issued to this client. (It is also returned in `/api/config`.)
 
 ## Amazon Q / Claude integration
 
@@ -71,33 +84,18 @@ The first connection opens a browser for you to sign in with Cognito; afterward
 >    otherwise mcp-remote's random port will not match Cognito's allow-listed
 >    `http://localhost:3334/oauth/callback`.
 
-## How identity is surfaced
+## Identity and audit
 
-- **The access token has no email** (a Cognito trait); the server reverse-looks-up
-  the email by user id via `admin-get-user` (with caching).
-- Every `run_query` return carries `"caller": "<your email>"`, and the server log
-  also records `run_query by=<email> ...`.
-- Note: identity is currently used for **audit/traceability** and does not change
-  the returned data (no per-user permissions/RLS).
-
-## Two auth modes (switchable)
-
-The server controls this with the `MCP_OAUTH_ENABLED` environment variable:
-
-| Mode | MCP auth | Identity | Suitable for |
-|------|---------|------|------|
-| `MCP_OAUTH_ENABLED=true` (Terraform default; the code default when unset is `false`) | Cognito OAuth | the signed-in person (real-time) | needing a real human identity |
-| `MCP_OAUTH_ENABLED=false` | API Key (`X-API-Key`) | the key creator (fixed at creation) | simple machine integration |
-
-Switching needs no code change: set `mcp_oauth_enabled` in tfvars and re-apply.
-Avoid hand-editing the task definition, because Terraform will drift from it and
-`data-service.yml` copies the current task definition forward on every deploy.
+The service does not see or record who is calling: the ALB has already decided
+whether the request may pass. There are no per-user permissions (no RLS/DDM);
+every authenticated caller sees every metric. If you need a per-user audit
+trail, enable ALB access logs or add one in your own deployment.
 
 ## AWS resources involved
 
 ```
-Cognito user pool   <REGION>_<POOL_ID> (medical-dev-users)
-portal app client   <PORTAL_APP_CLIENT_ID> (admin-page sign-in)
-agent app client    <AGENT_APP_CLIENT_ID> (MCP OAuth, public client)
-task role permission cognito-idp:AdminGetUser (reverse-look-up email)
+Cognito user pool   <REGION>_<POOL_ID>
+portal app client   <PORTAL_APP_CLIENT_ID> (portal sign-in; ID tokens on /api)
+agent app client    <AGENT_APP_CLIENT_ID> (MCP OAuth, public client; access tokens on /mcp)
+ALB listener rules  api_config (open), api (ID token), mcp (access token) in infra/terraform/alb.tf
 ```
