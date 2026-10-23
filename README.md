@@ -51,6 +51,11 @@ this sample is that **the LLM does not write SQL**:
 
 ## Architecture
 
+![Architecture: AI agent -> MCP server on ECS -> MetricFlow semantic layer -> Redshift Serverless](docs/architecture.png)
+
+<details>
+<summary>Mermaid source of the diagram</summary>
+
 ```mermaid
 flowchart TB
     U(["Business user / analyst"])
@@ -86,6 +91,8 @@ flowchart TB
     SEM -->|"compiles deterministic SQL"| RS
     RS -->|"results"| MCP
 ```
+
+</details>
 
 ## Quick start
 
