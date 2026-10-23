@@ -76,15 +76,15 @@ flowchart TB
 
     RS[["Redshift Serverless<br/>Data API"]]
 
-    U -- natural-language question --> LLM
-    U -. browser .-> VUE
-    LLM <-->|MCP over HTTP| MCP
+    U -->|"natural-language question"| LLM
+    U -.->|"browser"| VUE
+    LLM -->|"MCP over HTTP"| MCP
     MCP --> SEM
     VUE --> SEM
-    DM -. semantic model .-> SEM
-    DIM -. semantic model .-> SEM
-    SEM -- compiles deterministic SQL --> RS
-    RS -- results --> MCP
+    DM -.->|"semantic model"| SEM
+    DIM -.->|"semantic model"| SEM
+    SEM -->|"compiles deterministic SQL"| RS
+    RS -->|"results"| MCP
 ```
 
 ## Quick start

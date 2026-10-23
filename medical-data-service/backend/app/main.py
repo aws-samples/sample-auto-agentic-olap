@@ -172,9 +172,18 @@ if (_FRONTEND_DIST / "index.html").is_file():
     def serve_index() -> FileResponse:
         return _index()
 
+    # Top-level files of the build (favicon etc.), listed once at startup. The
+    # request path is only used as a lookup key, never to build a filesystem
+    # path, so it cannot reach anything outside the build directory.
+    _ROOT_FILES = {
+        p.name: p
+        for p in _FRONTEND_DIST.iterdir()
+        if p.is_file() and p.name != "index.html"
+    }
+
     @app.get("/{path:path}", include_in_schema=False)
     def serve_spa(path: str) -> FileResponse:
-        candidate = (_FRONTEND_DIST / path).resolve()
-        if candidate.is_file() and _FRONTEND_DIST.resolve() in candidate.parents:
-            return FileResponse(candidate)
+        root_file = _ROOT_FILES.get(path)
+        if root_file is not None:
+            return FileResponse(root_file)
         return _index()
