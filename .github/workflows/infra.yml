@@ -11,6 +11,9 @@ on:
 
 jobs:
   plan:
+    # Opt-in: set the repository variable AWS_CI_ENABLED=true after creating
+    # the OIDC roles and secrets below. Without it the job is skipped.
+    if: vars.AWS_CI_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -50,7 +53,7 @@ jobs:
   # environment (repository settings); configure them before enabling this.
   apply:
     needs: plan
-    if: github.ref == 'refs/heads/main'
+    if: vars.AWS_CI_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: prod
     permissions:

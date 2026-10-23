@@ -14,6 +14,9 @@ on:
 
 jobs:
   build:
+    # Opt-in: set the repository variable AWS_CI_ENABLED=true (and use a
+    # self-hosted runner in the VPC). Without it the job is skipped.
+    if: vars.AWS_CI_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
