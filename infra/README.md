@@ -423,6 +423,14 @@ service has no authentication at all, so keep it bound to localhost.
 .github/workflows/infra.yml          terraform fmt / validate / plan, then apply of the reviewed plan
 ```
 
+The jobs that call AWS (`dbt.yml` build, `data-service.yml` deploy, and both
+`infra.yml` jobs) are skipped unless the repository variable
+`AWS_CI_ENABLED` is `true`. A fresh fork or clone therefore runs only the
+back-end tests and the front-end build. To enable the AWS jobs, create the OIDC
+roles, add the `*_ROLE_ARN` secrets the workflows reference, then set
+`AWS_CI_ENABLED=true` under Settings -> Secrets and variables -> Actions ->
+Variables.
+
 `dbt.yml` needs a runner with network access to the private workgroup and
 `REDSHIFT_HOST` set; it does not work on GitHub-hosted runners as-is.
 

@@ -47,7 +47,9 @@ jobs:
 
   deploy:
     needs: [backend-test, frontend-build]
-    if: github.ref == 'refs/heads/main'
+    # Opt-in: set the repository variable AWS_CI_ENABLED=true after creating
+    # the OIDC deploy role and secrets. Without it the job is skipped.
+    if: vars.AWS_CI_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
